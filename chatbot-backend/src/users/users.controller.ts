@@ -6,16 +6,24 @@ import {
   HttpStatus,
   UsePipes,
   BadRequestException,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { SignupDto } from './dtos/signup.dto';
+import { LoginDto } from './dtos/login.dto';
+import { LocalAuthGuard } from '../auth/local-auth.guard';
+import { AuthService } from '../auth/auth.service';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
@@ -93,7 +101,10 @@ export class UsersController {
             type: 'object',
             properties: {
               campo: { type: 'string', example: 'email' },
-              mensagem: { type: 'string', example: 'Este campo é obrigatório' },
+              mensagem: {
+                type: 'string',
+                example: 'Este campo é obrigatório',
+              },
             },
           },
         },
@@ -104,9 +115,34 @@ export class UsersController {
     return this.usersService.signup(signupDto);
   }
 
-  @Post('test-validation')
-  testValidation(@Body() data: Record<string, unknown>) {
-    console.log('Received data:', data);
-    return { message: 'Data received', data };
+  @UseGuards(LocalAuthGuard)
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login with existing user credentials' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful',
+    schema: {
+      type: 'object',
+      properties: {
+        access_token: { type: 'string', example: 'jwt-token-here' },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'uuid-here' },
+            email: { type: 'string', example: 'user@example.com' },
+            name: { type: 'string', example: 'João Silva' },
+            phone: { type: 'string', example: '11999999999' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async login(@Request() req: any) {
+    return this.authService.login(req.user);
   }
 }
