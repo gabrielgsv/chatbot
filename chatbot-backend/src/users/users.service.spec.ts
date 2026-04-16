@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { SignupDto } from './dtos/signup.dto';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 
 jest.mock('bcrypt');
 const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
@@ -104,6 +104,78 @@ describe('UsersService', () => {
       expect(mockedBcrypt.hash).not.toHaveBeenCalled();
       expect(mockUserRepository.create).not.toHaveBeenCalled();
       expect(mockUserRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('login', () => {
+    it('should return user when credentials are valid', async () => {
+      const email = 'test@example.com';
+      const password = 'password123';
+      const user = {
+        id: 'uuid',
+        email,
+        password: 'hashedPassword',
+        name: 'Test User',
+        phone: '1234567890',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(user);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      (mockedBcrypt.compare as any).mockResolvedValue(true);
+
+      const result = await service.login(email, password);
+
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { email },
+      });
+      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
+        password,
+        user.password,
+      );
+      expect(result).toEqual(user);
+    });
+
+    it('should throw UnauthorizedException when user not found', async () => {
+      const email = 'notfound@example.com';
+      const password = 'password123';
+
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.login(email, password)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { email },
+      });
+      expect(mockedBcrypt.compare).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException when password is invalid', async () => {
+      const email = 'test@example.com';
+      const password = 'wrongpassword';
+      const user = {
+        id: 'uuid',
+        email,
+        password: 'hashedPassword',
+        name: 'Test User',
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(user);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      (mockedBcrypt.compare as any).mockResolvedValue(false);
+
+      await expect(service.login(email, password)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { email },
+      });
+      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
+        password,
+        user.password,
+      );
     });
   });
 });

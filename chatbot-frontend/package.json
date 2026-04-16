@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@heroui/react": "^3.0.2",
+    "@heroui/styles": "^3.0.2",
+    "ky": "^2.0.1",
     "next": "16.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4"

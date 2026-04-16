@@ -6,14 +6,14 @@
   "configurations": [
     {
       "type": "node-terminal",
-      "name": "Executar Script: start:dev (chatbot-backend)",
+      "name": "backend start:dev",
       "request": "launch",
       "command": "bun run start:dev",
       "cwd": "${workspaceFolder}\\chatbot-backend"
     },
     {
       "type": "node-terminal",
-      "name": "Executar Script: dev (chatbot-frontend)",
+      "name": "frontend dev",
       "request": "launch",
       "command": "bun run dev",
       "cwd": "${workspaceFolder}\\chatbot-frontend"
