@@ -2,15 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  TextField,
-  Label,
-  Input,
-  FieldError,
-  Button,
-  Spinner,
-  Alert,
-} from '@heroui/react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
 import { authenticate } from '../actions';
 import {
   registerServiceWorker,
@@ -100,16 +96,20 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
       setIsSuccess(result.success);
     }
 
-    // Se login deu sucesso, salva no Service Worker
+    // Se login deu sucesso, salva no Service Worker e localStorage
     if (isLogin && result.success && result.access_token) {
       console.log('[AuthForm] Salvando token no Service Worker');
       await setTokenInSW(result.access_token, result.user);
+
+      // Salva no localStorage para o serviço de telemetria
+      localStorage.setItem('auth_token', result.access_token);
+      localStorage.setItem('user', JSON.stringify(result.user));
 
       // Debug: verificar se salvou
       await debugSWStatus();
 
       console.log('[AuthForm] Redirecionando para:', result.redirect);
-      router.push(result.redirect || '/');
+      router.push('/chat');
       return;
     }
 
@@ -131,105 +131,97 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
     <>
       {globalMessage && (
         <div className="mb-6">
-          <Alert status={isSuccess ? 'success' : 'danger'} className="mb-4">
-            <Alert.Indicator />
-            <Alert.Content>
-              <Alert.Description>{globalMessage}</Alert.Description>
-            </Alert.Content>
+          <Alert variant={isSuccess ? 'default' : 'destructive'} className="mb-4">
+            <AlertTitle>{isSuccess ? 'Sucesso' : 'Erro'}</AlertTitle>
+            <AlertDescription>{globalMessage}</AlertDescription>
           </Alert>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isLogin && (
-          <TextField
-            isInvalid={!!fieldErrors.name}
-            isRequired
-            className="w-full"
-          >
-            <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Nome
             </Label>
             <Input
+              id="name"
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Seu nome completo"
-              className="mt-1"
+              className={fieldErrors.name ? "border-destructive" : ""}
+              required
             />
-            {fieldErrors.name && <FieldError>{fieldErrors.name}</FieldError>}
-          </TextField>
+            {fieldErrors.name && (
+              <p className="text-sm text-destructive">{fieldErrors.name}</p>
+            )}
+          </div>
         )}
 
-        <TextField
-          isInvalid={!!fieldErrors.email}
-          isRequired
-          className="w-full"
-        >
-          <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
             E-mail
           </Label>
           <Input
+            id="email"
             type="email"
             value={formData.email}
             onChange={(e) => handleInputChange('email', e.target.value)}
             placeholder="seu@email.com"
-            className="mt-1"
+            className={fieldErrors.email ? "border-destructive" : ""}
+            required
           />
-          {fieldErrors.email && <FieldError>{fieldErrors.email}</FieldError>}
-        </TextField>
+          {fieldErrors.email && (
+            <p className="text-sm text-destructive">{fieldErrors.email}</p>
+          )}
+        </div>
 
-        <TextField
-          isInvalid={!!fieldErrors.password}
-          isRequired
-          className="w-full"
-        >
-          <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Senha
           </Label>
           <Input
+            id="password"
             type="password"
             value={formData.password}
             onChange={(e) => handleInputChange('password', e.target.value)}
             placeholder="Mínimo 6 caracteres"
-            className="mt-1"
+            className={fieldErrors.password ? "border-destructive" : ""}
+            required
           />
           {fieldErrors.password && (
-            <FieldError>{fieldErrors.password}</FieldError>
+            <p className="text-sm text-destructive">{fieldErrors.password}</p>
           )}
-        </TextField>
+        </div>
 
         {!isLogin && (
-          <TextField
-            isInvalid={!!fieldErrors.phone}
-            className="w-full"
-          >
-            <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Telefone (opcional)
             </Label>
             <Input
+              id="phone"
               type="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="11999999999"
-              className="mt-1"
+              className={fieldErrors.phone ? "border-destructive" : ""}
             />
             {fieldErrors.phone && (
-              <FieldError>{fieldErrors.phone}</FieldError>
+              <p className="text-sm text-destructive">{fieldErrors.phone}</p>
             )}
-          </TextField>
+          </div>
         )}
 
         <Button
           type="submit"
-          variant="primary"
           size="lg"
-          fullWidth
-          isDisabled={isLoading}
-          className="mt-6"
+          disabled={isLoading}
+          className="w-full mt-6"
         >
           {isLoading ? (
-            <Spinner size="sm" color="current" />
+            <Spinner className="size-4" />
           ) : isLogin ? (
             'Entrar'
           ) : (
