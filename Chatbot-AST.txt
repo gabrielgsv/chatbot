@@ -1,0 +1,70 @@
+Chatbot de coleta de dados - AST
+Data Collection App & Backend Centralizado
+Olá! Agradecemos o seu interesse em fazer parte do time de Engenharia da Hand Talk.
+Nós temos a missão de quebrar barreiras de comunicação utilizando tecnologia e inteligência artificial. Para suportar essa operação em escala global (junto à Sorenson), lidamos com grandes volumes de dados, processamento assíncrono e arquiteturas distribuídas.
+Este desafio foi desenhado para simular o dia a dia do nosso novo esquadrão focado em produtos de coleta de dados. Você terá 7 dias corridos para entregá-lo.
+O Cenário
+Nosso time está criando aplicações de propósito geral com um objetivo claro nos bastidores: coleta massiva de dados de interação dos usuários.
+Seu objetivo é construir um Chatbot Simplista que possua um motor de telemetria robusto rodando "por baixo dos panos", e um Backend Centralizado capaz de autenticar esses usuários de forma segura e ingerir esse montante de dados sem cair.
+Casos de Uso e Liberdade Criativa: O destino final dos dados que você vai coletar inclui treinar nossos modelos de Inteligência Artificial, entender padrões de comportamento, melhorar a acessibilidade e gerar insights analíticos sobre o produto.
+No entanto, nós não vamos te dar uma lista do que rastrear. Queremos que você use a sua criatividade e visão de produto para definir a estratégia e a curadoria dos dados coletados. O que é valioso observar em um chat? Você decide quais eventos e metadados enviar para a sua API. Surpreenda-nos!
+Escopo do Projeto (O que deve ser construído)
+Você deverá construir uma aplicação contemplando as seguintes frentes:
+1. Backend: API Centralizada (NestJS)
+Sua API será o motor do sistema e deverá lidar com as seguintes responsabilidades:
+
+    Criação de Conta (POST /signup): Uma rota para registrar um novo usuário no sistema utilizando e-mail e senha.
+    Autenticação (POST /login): Uma rota que recebe o e-mail e senha cadastrados e retorna um token JWT. Todas as rotas subsequentes do app (como a de coleta) devem obrigatoriamente usar este token.
+    Módulo de Ingestão (POST /collect): O coração do sistema. Recebe dados analíticos e de interação do chatbot. Obrigatório o uso do token JWT aqui. Ele receberá alto volume de requisições e não deve travar o event loop do Node.js.
+    // Exemplo estrutural e como poderia ser o payload de coleta (lembre-se: a estratégia de quais dados compõem este payload é sua!)
+    {
+      "userId": "uuid-do-usuário",
+      "eventType": "message_hesitation",
+      "timestamp": "2026-04-01T14:30:00Z",
+      "metadata": { "timeTypingBeforeClear": 4500, "userDevice": "desktop" }
+    }
+    Consulta Simples (GET /data): Um endpoint básico para que os avaliadores possam listar ou filtrar os dados coletados de um usuário, provando que a ingestão e a gravação funcionaram corretamente.
+
+2. Frontend: App de Propósito Geral (Chatbot em React)
+A interface deve ser minimalista, mas a engenharia por trás dela deve ser brilhante.
+
+    Autenticação: Ao abrir o app, o usuário deve ser apresentado a formulários básicos de Sign Up (Cadastro) e Login. O usuário precisa criar a sua conta e autenticar no backend para receber o JWT e poder iniciar o chat.
+    O App (Chatbot): Uma interface simples de chat liberada após o login. O usuário digita algo, e o bot responde (pode ser um mock simples com várias respostas hardcoded, regras heurísticas ou integração com alguma IA gratuita). Não estamos avaliando o funcionamento do chatbot, mas sim, como você coleta os dados do usuário durante seu uso).
+    A Parte Brilhante (Telemetria e Curadoria): O app deve observar o usuário silenciosamente baseando-se na estratégia que você definiu no Cenário.
+        Implemente a captura dos eventos que você julgou valiosos para os nossos casos de uso analíticos e de IA.
+
+Stack Tecnológica Obrigatória
+
+    Backend: Node.js, NestJS, TypeScript.
+    Frontend: React, TypeScript.
+    Banco de Dados: Relacional ou não relacional (não importa sua escolha, contanto que você justifique pensando em dados massivos e segurança do usuário).
+    Infra: Docker e docker-compose
+
+Requisitos Gerais
+Estes são os requisitos mínimos exigidos para o desafio:
+
+    Código bem estruturado, limpo e de fácil manutenção: Não ligamos para qual padrão você for usar, esteja livre para utilizar o que mais faça sentido para seu sistema. Iremos avaliar a qualidade geral, independentemente disso. Lembre-se sempre de justificar suas escolhas!
+    Gestão de Configuração: Uso de variáveis de ambiente (.env) e .gitignore apropriado. Nada de senhas ou secrets de JWT no código.
+    Tratamento de Erros: Exceções mapeadas para status HTTP corretos (filtros globais de exceção no NestJS). Respostas limpas para credenciais inválidas ou e-mails já cadastrados.
+    Histórico Limpo: Commits descritivos, granulares e em inglês ou português.
+    Testes Automatizados: Testes unitários para a regra de negócio central e testes de componentes críticos no Frontend.
+    Monorepo-simplificado: Um repositório raiz com as pastas /frontend e /backend para vermos o código em um lugar só (sem necessidade de compartilhamento entre apps).
+    Documentação: Um README bem estruturado explicando suas decisões (especialmente a estratégia de dados escolhida) e como rodar o projeto.
+    IMPORTANTE: O sistema deve rodar sem problemas para os avaliadores (comando unificado).
+
+Requisitos Extra (Diferenciais)
+Cumprir com estes requisitos fará sua submissão brilhar aos nossos olhos, pois refletem os diferenciais das nossas vagas:
+
+    Estratégia de Batching no Front: Implementar o envio de telemetria em lotes no React, demonstrando controle avançado de estado e ciclo de vida.
+    Acessibilidade Web (WCAG): Construir os formulários de login e o Chatbot respeitando diretrizes básicas de acessibilidade (contraste, navegação por teclado, aria-labels). Como acessibilidade é o core do nosso negócio, isso é um diferencial de peso.
+    Comunicação Real-time (WebSockets): Usar WebSockets para o fluxo do chat em si, enquanto usa HTTP tradicional para os lotes de telemetria (ou vice-versa).
+    Observabilidade / CI-CD: Logs estruturados no backend e incluir um pipeline CI simples (ex: GitHub Actions) que roda lint e testes no PR.
+    Testes E2E
+
+Instruções de Entrega
+
+    Crie um repositório no GitHub.
+    O repositório deve conter um README.md claro ensinando como rodar o projeto, explicando a sua curadoria de dados e onde encontrar as documentações extras, se houver.
+    Envie e-mail com o link do repositório até o prazo estipulado para priscilatambuque@handtalk.me com cópia para matheusmoura@handtalk.me e leonardopetta@handtalk.me.
+
+Boa sorte! Estamos ansiosos para ver a sua solução e conversar sobre ela na entrevista técnica.
