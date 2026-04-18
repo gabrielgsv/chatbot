@@ -1,22 +1,13 @@
-// Telemetry Service - Data Collection Strategy
-// Curadoria de dados para análise comportamental e treinamento de IA
-
 export enum EventType {
-  TYPING_START = 'typing_start',
-  TYPING_END = 'typing_end',
-  TYPING_PAUSE = 'typing_pause',
-  MESSAGE_EDIT = 'message_edit',
-  MESSAGE_CLEAR = 'message_clear',
-  SCROLL_VELOCITY = 'scroll_velocity',
-  CLICK_HEATMAP = 'click_heatmap',
-  TIME_ON_PAGE = 'time_on_page',
-  TAB_SWITCH = 'tab_switch',
-  DEVICE_INFO = 'device_info',
-  CONNECTION_QUALITY = 'connection_quality',
-  SESSION_START = 'session_start',
-  SESSION_END = 'session_end',
-  MESSAGE_SENT = 'message_sent',
-  MESSAGE_RECEIVED = 'message_received',
+  USER_DATA = 'user_data',
+  USER_MESSAGE = 'user_message',
+  BOT_RESPONSE = 'bot_response',
+  USER_LOCATION = 'user_location',
+  RETURN_RATE = 'return_rate',
+  MESSAGE_INTERVAL = 'message_interval',
+  FEEDBACK = 'feedback',
+  RESPONSE_TIME = 'response_time',
+  LANGUAGE = 'language',
 }
 
 export interface TelemetryEvent {
@@ -40,12 +31,17 @@ class TelemetryService {
   private authToken: string | null = null;
   private sessionId: string;
 
+  private lastMessageTime: number | null = null;
+  private lastVisitTime: number | null = null;
+
   constructor() {
     this.apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     this.sessionId = this.generateSessionId();
     this.startFlushTimer();
-    this.collectDeviceInfo();
-    this.trackTimeOnPage();
+    this.collectUserData();
+    this.collectUserLocation();
+    this.detectLanguage();
+    this.checkReturnRate();
   }
 
   setAuthToken(token: string) {
@@ -60,7 +56,6 @@ class TelemetryService {
     return `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 
-  // Core: Track event
   track(eventType: EventType, metadata?: object) {
     const event: TelemetryEvent = {
       eventType,
@@ -72,16 +67,14 @@ class TelemetryService {
 
     this.buffer.push(event);
 
-    // Auto-flush if buffer is full
     if (this.buffer.length >= this.maxBatchSize) {
       this.flush();
     }
   }
 
-  // Strategy: Batching with automatic flush
   private startFlushTimer() {
     if (typeof window === 'undefined') return;
-    
+
     this.flushTimer = setInterval(() => {
       if (this.buffer.length > 0) {
         this.flush();
@@ -90,20 +83,27 @@ class TelemetryService {
 
     // Flush on page unload
     window.addEventListener('beforeunload', () => {
-      this.track(EventType.SESSION_END, { durationMs: this.sessionStartTime ? Date.now() - this.sessionStartTime : 0 });
       this.flushSync();
     });
 
-    // Track tab visibility changes
-    document.addEventListener('visibilitychange', () => {
-      this.track(EventType.TAB_SWITCH, {
-        hidden: document.hidden,
-        timeSinceLastVisible: Date.now(),
-      });
+    // Track return rate on page load
+    window.addEventListener('load', () => {
+      this.checkReturnRate();
     });
   }
 
   private sessionStartTime: number = Date.now();
+
+  private getStoredData() {
+    if (typeof window === 'undefined') return null;
+    const data = localStorage.getItem('telemetry_user_data');
+    return data ? JSON.parse(data) : null;
+  }
+
+  private setStoredData(data: object) {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('telemetry_user_data', JSON.stringify(data));
+  }
 
   private async flush() {
     if (this.buffer.length === 0 || !this.authToken) return;
@@ -112,7 +112,6 @@ class TelemetryService {
       events: [...this.buffer],
     };
 
-    // Clear buffer immediately to avoid duplicates
     this.buffer = [];
 
     try {
@@ -129,12 +128,9 @@ class TelemetryService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      console.log(`[Telemetry] Sent ${batch.events.length} events`);
     } catch (error) {
       console.error('[Telemetry] Failed to send batch:', error);
-      // Retry logic: add events back to buffer for retry
       this.buffer.unshift(...batch.events);
-      // Keep only last 100 events to prevent memory issues
       if (this.buffer.length > 100) {
         this.buffer = this.buffer.slice(-100);
       }
@@ -142,7 +138,6 @@ class TelemetryService {
   }
 
   private flushSync() {
-    // Synchronous flush for page unload using sendBeacon
     if (this.buffer.length === 0 || !this.authToken) return;
 
     const batch: TelemetryBatch = {
@@ -153,137 +148,162 @@ class TelemetryService {
     navigator.sendBeacon?.(`${this.apiUrl}/telemetry/batch`, blob);
   }
 
-  // Data Collection Strategies
-
-  private collectDeviceInfo() {
+  private collectUserData() {
     if (typeof window === 'undefined') return;
 
-    this.track(EventType.DEVICE_INFO, {
+    const userData = {
       userAgent: navigator.userAgent,
-      language: navigator.language,
       screenResolution: `${window.screen.width}x${window.screen.height}`,
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       platform: navigator.platform,
       deviceMemory: (navigator as { deviceMemory?: number }).deviceMemory,
-      connection: (navigator as { connection?: { effectiveType: string; downlink: number } }).connection?.effectiveType,
-    });
-
-    this.track(EventType.SESSION_START, {
       referrer: document.referrer,
+      sessionStart: new Date().toISOString(),
+    };
+
+    this.track(EventType.USER_DATA, userData);
+  }
+
+  private collectUserLocation() {
+    if (typeof window === 'undefined') return;
+
+    // Try to get location from geolocation API
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.track(EventType.USER_LOCATION, {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date().toISOString(),
+          });
+        },
+        (error) => {
+          // Fallback to timezone-based location
+          this.track(EventType.USER_LOCATION, {
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            timestamp: new Date().toISOString(),
+            error: error.message,
+          });
+        },
+        { timeout: 5000, maximumAge: 60000 }
+      );
+    } else {
+      this.track(EventType.USER_LOCATION, {
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  private detectLanguage() {
+    if (typeof window === 'undefined') return;
+
+    this.track(EventType.LANGUAGE, {
+      browserLanguage: navigator.language,
+      languages: navigator.languages,
       timestamp: new Date().toISOString(),
     });
   }
 
-  private trackTimeOnPage() {
+  private checkReturnRate() {
     if (typeof window === 'undefined') return;
 
-    let lastActiveTime = Date.now();
-    const checkInterval = setInterval(() => {
-      const now = Date.now();
-      const timeOnPage = now - this.sessionStartTime;
-      
-      // Send periodic updates every 30 seconds
-      if (timeOnPage % 30000 < 1000) {
-        this.track(EventType.TIME_ON_PAGE, {
-          totalMs: timeOnPage,
-          lastActiveMs: now - lastActiveTime,
-        });
-      }
-    }, 1000);
+    const stored = this.getStoredData();
+    const now = Date.now();
 
-    // Update last active time on interaction
-    ['click', 'scroll', 'keydown', 'mousemove'].forEach(event => {
-      window.addEventListener(event, () => {
-        lastActiveTime = Date.now();
-      }, { passive: true });
-    });
+    if (stored && stored.lastVisit) {
+      const daysSinceLastVisit = (now - stored.lastVisit) / (1000 * 60 * 60 * 24);
+      this.track(EventType.RETURN_RATE, {
+        daysSinceLastVisit: Math.round(daysSinceLastVisit * 100) / 100,
+        isReturningUser: daysSinceLastVisit < 30,
+        previousVisits: stored.visitCount || 0,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Update visit count
+      this.setStoredData({
+        ...stored,
+        lastVisit: now,
+        visitCount: (stored.visitCount || 0) + 1,
+      });
+    } else {
+      this.track(EventType.RETURN_RATE, {
+        isReturningUser: false,
+        previousVisits: 0,
+        timestamp: new Date().toISOString(),
+      });
+
+      this.setStoredData({
+        lastVisit: now,
+        visitCount: 1,
+      });
+    }
   }
 
-  // Chat-specific tracking
-  trackTypingStart() {
-    this.track(EventType.TYPING_START);
-  }
+  trackUserMessage(content: string) {
+    const now = Date.now();
+    let timeSinceLastMessage: number | null = null;
 
-  trackTypingEnd(durationMs: number, characterCount: number) {
-    this.track(EventType.TYPING_END, {
-      durationMs,
-      characterCount,
-      wpm: characterCount / 5 / (durationMs / 60000), // Rough WPM estimate
-    });
-  }
+    if (this.lastMessageTime) {
+      timeSinceLastMessage = now - this.lastMessageTime;
+    }
+    this.lastMessageTime = now;
 
-  trackTypingPause(pauseDurationMs: number) {
-    this.track(EventType.TYPING_PAUSE, {
-      pauseDurationMs,
-      threshold: 2000, // Pause > 2 seconds
-    });
-  }
-
-  trackMessageEdit(originalLength: number, finalLength: number) {
-    this.track(EventType.MESSAGE_EDIT, {
-      originalLength,
-      finalLength,
-      editRatio: finalLength / originalLength,
-    });
-  }
-
-  trackMessageClear(contentLength: number) {
-    this.track(EventType.MESSAGE_CLEAR, {
-      contentLength,
-      timeInvestedMs: null, // Can be calculated from typing_start
-    });
-  }
-
-  trackMessageSent(content: string, responseTimeMs?: number) {
-    this.track(EventType.MESSAGE_SENT, {
+    this.track(EventType.USER_MESSAGE, {
       messageLength: content.length,
       wordCount: content.split(/\s+/).length,
       hasQuestionMark: content.includes('?'),
-      responseTimeMs,
+      timestamp: new Date().toISOString(),
     });
+
+    // Also track the interval if we have a previous message
+    if (timeSinceLastMessage !== null) {
+      this.track(EventType.MESSAGE_INTERVAL, {
+        intervalMs: timeSinceLastMessage,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
-  trackMessageReceived(content: string, source: 'ai' | 'mock') {
-    this.track(EventType.MESSAGE_RECEIVED, {
+  trackBotResponse(content: string, source: 'ai' | 'mock', responseTimeMs?: number) {
+    this.track(EventType.BOT_RESPONSE, {
       messageLength: content.length,
       wordCount: content.split(/\s+/).length,
       source,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Track response time separately if provided
+    if (responseTimeMs !== undefined) {
+      this.track(EventType.RESPONSE_TIME, {
+        responseTimeMs,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  trackFeedback(messageId: string, isApproved: boolean, comment?: string) {
+    this.track(EventType.FEEDBACK, {
+      messageId,
+      isApproved,
+      comment,
+      timestamp: new Date().toISOString(),
     });
   }
 
-  trackScrollVelocity(velocity: number, direction: 'up' | 'down') {
-    this.track(EventType.SCROLL_VELOCITY, {
-      velocity: Math.round(velocity),
-      direction,
-      timestamp: Date.now(),
+  trackResponseTime(responseTimeMs: number) {
+    this.track(EventType.RESPONSE_TIME, {
+      responseTimeMs,
+      timestamp: new Date().toISOString(),
     });
   }
 
-  trackClick(element: string, position: { x: number; y: number }) {
-    this.track(EventType.CLICK_HEATMAP, {
-      element,
-      position,
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-    });
-  }
-
-  trackConnectionQuality(latencyMs: number) {
-    this.track(EventType.CONNECTION_QUALITY, {
-      latencyMs,
-      timestamp: Date.now(),
-    });
-  }
-
-  // Manual flush for logout/page navigation
   async forceFlush() {
-    this.track(EventType.SESSION_END, {
-      durationMs: Date.now() - this.sessionStartTime,
-    });
     await this.flush();
   }
 
-  // Cleanup
   destroy() {
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
@@ -295,44 +315,11 @@ class TelemetryService {
 // Singleton instance
 export const telemetry = new TelemetryService();
 
-// React hook for typing tracking
+// Hook simplificado - agora apenas retorna funções dummy
+// A telemetria foi simplificada para focar em eventos de mensagem
 export function useTypingTracker() {
-  let typingStartTime: number | null = null;
-  let lastInputTime: number = Date.now();
-  let pauseTimer: NodeJS.Timeout | null = null;
-
-  const handleTypingStart = () => {
-    if (!typingStartTime) {
-      typingStartTime = Date.now();
-      telemetry.trackTypingStart();
-    }
-    lastInputTime = Date.now();
-
-    // Track pauses
-    if (pauseTimer) clearTimeout(pauseTimer);
-    pauseTimer = setTimeout(() => {
-      if (typingStartTime) {
-        const pauseDuration = Date.now() - lastInputTime;
-        if (pauseDuration > 2000) {
-          telemetry.trackTypingPause(pauseDuration);
-        }
-      }
-    }, 2000);
-  };
-
-  const handleTypingEnd = (content: string) => {
-    if (typingStartTime) {
-      const duration = Date.now() - typingStartTime;
-      telemetry.trackTypingEnd(duration, content.length);
-      typingStartTime = null;
-    }
-    if (pauseTimer) {
-      clearTimeout(pauseTimer);
-    }
-  };
-
   return {
-    handleTypingStart,
-    handleTypingEnd,
+    handleTypingStart: () => {},
+    handleTypingEnd: (_content: string) => {},
   };
 }

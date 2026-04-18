@@ -53,7 +53,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
       this.logger.log(`Client connected: ${client.id}, user: ${client.userId}`);
       
-      // Send session info to client
       client.emit('session', { sessionId: client.sessionId });
     } catch (error) {
       this.logger.error('Invalid token:', error);
@@ -76,27 +75,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      // Broadcast typing indicator
       client.broadcast.emit('user:typing', {
         userId: client.userId,
         typing: false,
       });
 
-      // Generate response using AI or mock
       const response = await this.chatService.generateResponse(
         client.userId,
         data.content,
         client.sessionId,
       );
 
-      // Send response back to the user
       client.emit('chat:response', {
         content: response.content,
         metadata: response.metadata,
         timestamp: new Date().toISOString(),
       });
-
-      this.logger.debug(`Message processed for user ${client.userId}`);
     } catch (error) {
       this.logger.error('Error processing message:', error);
       client.emit('error', { message: 'Failed to process message' });

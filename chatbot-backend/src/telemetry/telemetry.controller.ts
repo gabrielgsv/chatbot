@@ -40,26 +40,11 @@ export class TelemetryController {
     @Body() batchDto: CreateBatchDto,
   ) {
     try {
-      this.logger.debug(
-        `Processing telemetry batch: ${batchDto.events.length} events for user ${req.user.userId}`,
-      );
-
-      // Log first few events for debugging
-      if (batchDto.events.length > 0) {
-        this.logger.debug(`First event: ${JSON.stringify(batchDto.events[0])}`);
-      }
-      if (batchDto.events.length > 5) {
-        this.logger.debug(
-          `Last event: ${JSON.stringify(batchDto.events[batchDto.events.length - 1])}`,
-        );
-      }
-
       const result = await this.telemetryService.createBatch(
         req.user.userId,
         batchDto,
       );
 
-      this.logger.debug(`Successfully inserted ${result.inserted} events`);
       return {
         statusCode: HttpStatus.CREATED,
         message: 'Events recorded successfully',

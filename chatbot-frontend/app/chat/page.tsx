@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { chatService, ChatMessage } from '@/lib/chat';
-import { telemetry, useTypingTracker } from '@/lib/telemetry';
+import { telemetry } from '@/lib/telemetry';
 import Image from 'next/image';
 
 export default function ChatPage() {
@@ -18,11 +19,11 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [feedbackMap, setFeedbackMap] = useState<Record<string, boolean | null>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { handleTypingStart, handleTypingEnd } = useTypingTracker();
 
   // Authentication check and connection
   useEffect(() => {
@@ -50,6 +51,12 @@ export default function ChatPage() {
         metadata: response.metadata,
       };
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Track bot response
+      const source = response.metadata && 'source' in response.metadata
+        ? (response.metadata.source as 'ai' | 'mock')
+        : 'mock';
+      telemetry.trackBotResponse(response.content, source);
     });
 
     const unsubscribeError = chatService.onError((error) => {
@@ -78,8 +85,6 @@ export default function ChatPage() {
   const handleSend = useCallback(() => {
     if (!inputValue.trim() || isLoading) return;
 
-    // Track typing end
-    handleTypingEnd(inputValue);
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -97,16 +102,15 @@ export default function ChatPage() {
     // Clear input
     setInputValue('');
     setIsTyping(false);
-  }, [inputValue, isLoading, handleTypingEnd]);
+  }, [inputValue, isLoading]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
 
-    // Track typing
+    // Track typing state for UI only
     if (!isTyping && value.length > 0) {
       setIsTyping(true);
-      handleTypingStart();
       chatService.sendTypingIndicator(true);
     }
 
@@ -119,7 +123,6 @@ export default function ChatPage() {
     typingTimeoutRef.current = setTimeout(() => {
       if (value.length > 0) {
         setIsTyping(false);
-        handleTypingEnd(value);
         chatService.sendTypingIndicator(false);
       }
     }, 1000);
@@ -144,6 +147,11 @@ export default function ChatPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleFeedback = (messageId: string, isApproved: boolean) => {
+    telemetry.trackFeedback(messageId, isApproved);
+    setFeedbackMap(prev => ({ ...prev, [messageId]: isApproved }));
   };
 
   const getSourceBadge = (metadata?: Record<string, unknown>) => {
@@ -230,7 +238,35 @@ export default function ChatPage() {
                       <span className="text-xs opacity-70">
                         {formatTime(message.timestamp)}
                       </span>
-                      {message.role === 'assistant' && getSourceBadge(message.metadata as Record<string, unknown> | undefined)}
+                      <div className="flex items-center gap-2">
+                        {message.role === 'assistant' && getSourceBadge(message.metadata as Record<string, unknown> | undefined)}
+                        {message.role === 'assistant' && (
+                          <div className="flex items-center gap-1 ml-2">
+                            <button
+                              onClick={() => handleFeedback(message.id, true)}
+                              className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${feedbackMap[message.id] === true
+                                  ? 'text-green-500'
+                                  : 'text-gray-400 dark:text-gray-500'
+                                }`}
+                              aria-label="Aprovar resposta"
+                              disabled={feedbackMap[message.id] !== undefined}
+                            >
+                              <ThumbsUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => handleFeedback(message.id, false)}
+                              className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${feedbackMap[message.id] === false
+                                  ? 'text-red-500'
+                                  : 'text-gray-400 dark:text-gray-500'
+                                }`}
+                              aria-label="Reprovar resposta"
+                              disabled={feedbackMap[message.id] !== undefined}
+                            >
+                              <ThumbsDown className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

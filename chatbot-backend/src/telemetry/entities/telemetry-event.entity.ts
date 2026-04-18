@@ -10,21 +10,15 @@ import {
 import { User } from '../../users/entities/user.entity';
 
 export enum EventType {
-  TYPING_START = 'typing_start',
-  TYPING_END = 'typing_end',
-  TYPING_PAUSE = 'typing_pause',
-  MESSAGE_EDIT = 'message_edit',
-  MESSAGE_CLEAR = 'message_clear',
-  SCROLL_VELOCITY = 'scroll_velocity',
-  CLICK_HEATMAP = 'click_heatmap',
-  TIME_ON_PAGE = 'time_on_page',
-  TAB_SWITCH = 'tab_switch',
-  DEVICE_INFO = 'device_info',
-  CONNECTION_QUALITY = 'connection_quality',
-  SESSION_START = 'session_start',
-  SESSION_END = 'session_end',
-  MESSAGE_SENT = 'message_sent',
-  MESSAGE_RECEIVED = 'message_received',
+  USER_DATA = 'user_data',
+  USER_MESSAGE = 'user_message',
+  BOT_RESPONSE = 'bot_response',
+  USER_LOCATION = 'user_location',
+  RETURN_RATE = 'return_rate',
+  MESSAGE_INTERVAL = 'message_interval',
+  FEEDBACK = 'feedback',
+  RESPONSE_TIME = 'response_time',
+  LANGUAGE = 'language',
 }
 
 @Entity('telemetry_events')

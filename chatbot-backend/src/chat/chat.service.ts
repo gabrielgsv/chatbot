@@ -63,7 +63,6 @@ export class ChatService {
     message: string,
     sessionId?: string,
   ): Promise<ChatResponse> {
-    // Save user message
     await this.saveMessage(userId, MessageRole.USER, message, sessionId);
 
     let responseContent: string;
@@ -71,7 +70,6 @@ export class ChatService {
 
     if (this.openai) {
       try {
-        // Get recent history for context
         const history = await this.getChatHistory(userId, sessionId, 10);
         const messages = [
           {
@@ -107,7 +105,6 @@ export class ChatService {
       metadata = { source: 'mock', reason: 'no_api_key' };
     }
 
-    // Save assistant response
     await this.saveMessage(userId, MessageRole.ASSISTANT, responseContent, sessionId);
 
     return { content: responseContent, metadata };

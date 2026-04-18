@@ -12,7 +12,6 @@ async function bootstrap() {
   };
   app.enableCors(corsOptions);
 
-  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Chatbot Data Collection API')
     .setDescription('Backend API for user registration and data collection')

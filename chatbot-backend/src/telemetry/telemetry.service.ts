@@ -29,7 +29,6 @@ export class TelemetryService {
       }),
     );
 
-    // Use insert for better performance with large batches
     const result = await this.telemetryRepository.insert(events);
     const count = result.identifiers?.length || events.length;
 

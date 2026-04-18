@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { telemetry, EventType } from './telemetry';
+import { telemetry } from './telemetry';
 
 export interface ChatMessage {
   id: string;
@@ -35,23 +35,18 @@ export class ChatService {
     });
 
     this.socket.on('connect', () => {
-      console.log('[Chat] Connected to WebSocket');
-      telemetry.trackConnectionQuality(0);
-    });
-
-    this.socket.on('disconnect', (reason) => {
-      console.log('[Chat] Disconnected:', reason);
+      // Connection established - no specific telemetry needed
     });
 
     this.socket.on('session', (data: { sessionId: string }) => {
-      console.log('[Chat] Session ID:', data.sessionId);
       telemetry.setSessionId(data.sessionId);
     });
 
     this.socket.on('chat:response', (data: { content: string; metadata?: object; timestamp: string }) => {
       const source = data.metadata && 'source' in data.metadata ? (data.metadata.source as 'ai' | 'mock') : 'mock';
-      telemetry.trackMessageReceived(data.content, source);
-      
+      // Response time is tracked in sendMessage
+      telemetry.trackBotResponse(data.content, source);
+
       this.responseListeners.forEach(listener => listener(data));
     });
 
@@ -66,7 +61,6 @@ export class ChatService {
     });
 
     this.socket.on('error', (error: { message: string }) => {
-      console.error('[Chat] Error:', error);
       this.errorListeners.forEach(listener => listener(error));
     });
   }
@@ -77,23 +71,19 @@ export class ChatService {
   }
 
   sendMessage(content: string) {
-    if (!this.socket?.connected) {
-      console.error('[Chat] Not connected');
-      return;
-    }
+    if (!this.socket?.connected) return;
 
     const startTime = Date.now();
     this.socket.emit('chat:message', { content });
-    
-    telemetry.trackMessageSent(content);
 
-    // Track response time
+    // Track user message
+    telemetry.trackUserMessage(content);
+
+    // Track response time when response arrives
     const checkResponse = (data: { content: string }) => {
-      const responseTime = Date.now() - startTime;
-      telemetry.track(EventType.MESSAGE_SENT, {
-        content,
-        responseTimeMs: responseTime,
-      });
+      const responseTimeMs = Date.now() - startTime;
+      const source = 'ai' as const;
+      telemetry.trackBotResponse(data.content, source, responseTimeMs);
     };
 
     this.once('response', checkResponse);

@@ -11,7 +11,6 @@ import { authenticate } from '../actions';
 import {
   registerServiceWorker,
   setTokenInSW,
-  debugSWStatus,
   isSWReady,
 } from '../lib/serviceWorker';
 
@@ -42,16 +41,9 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
   });
   const [swReady, setSwReady] = useState(false);
 
-  // Registra o Service Worker ao montar o componente
   useEffect(() => {
     registerServiceWorker().then(() => {
       setSwReady(isSWReady());
-      console.log('[AuthForm] SW registrado. Pronto:', isSWReady());
-
-      // Debug: verificar status do token no SW
-      if (isSWReady()) {
-        debugSWStatus();
-      }
     });
   }, []);
 
@@ -67,14 +59,6 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
     setGlobalMessage('');
     setFieldErrors({});
 
-    console.log('[AuthForm] Enviando dados:', {
-      isLogin,
-      email: formData.email,
-      password: '***',
-      name: formData.name,
-      phone: formData.phone,
-    });
-
     const result = await authenticate(
       isLogin,
       formData.email,
@@ -82,8 +66,6 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
       formData.name,
       formData.phone
     );
-
-    console.log('[AuthForm] Resultado:', result);
 
     setIsLoading(false);
 
@@ -96,24 +78,14 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
       setIsSuccess(result.success);
     }
 
-    // Se login deu sucesso, salva no Service Worker e localStorage
     if (isLogin && result.success && result.access_token) {
-      console.log('[AuthForm] Salvando token no Service Worker');
       await setTokenInSW(result.access_token, result.user);
-
-      // Salva no localStorage para o serviço de telemetria
       localStorage.setItem('auth_token', result.access_token);
       localStorage.setItem('user', JSON.stringify(result.user));
-
-      // Debug: verificar se salvou
-      await debugSWStatus();
-
-      console.log('[AuthForm] Redirecionando para:', result.redirect);
       router.push('/chat');
       return;
     }
 
-    // Se signup deu sucesso, volta para login e limpa senha
     if (!isLogin && result.success) {
       setIsLogin(true);
       setFormData((prev) => ({ ...prev, password: '', name: '', phone: '' }));
