@@ -2,29 +2,79 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatMessage, MessageRole } from './entities/message.entity';
-import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
+import { ChatOpenAI } from '@langchain/openai';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { RunnableSequence } from '@langchain/core/runnables';
+import { StringOutputParser } from '@langchain/core/output_parsers';
 
 export interface ChatResponse {
   content: string;
   metadata?: object;
+  messageId?: string;
 }
 
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
-  private openai: OpenAI | null = null;
+  private model: ChatOpenAI | null = null;
+  private chain: RunnableSequence | null = null;
+
+  private readonly HAND_TALK_SYSTEM_PROMPT = `Você é um assistente virtual especializado exclusivamente em assuntos relacionados à Hand Talk (https://www.handtalk.me/br).
+
+Sobre a Hand Talk:
+- Empresa brasileira fundada em 2012, pioneira em acessibilidade digital
+- Oferece soluções de tradução automática para Libras (Língua Brasileira de Sinais), ASL (American Sign Language) e BSL (British Sign Language)
+- Principais produtos:
+  1. Hand Talk App - Aplicativo móvel eleito "Melhor Aplicativo Social do Mundo" pela ONU
+     * Traduz textos, áudios e imagens para Libras
+     * Usa o avatar Hugo (personagem masculino) e Maya (personagem feminina)
+     * Possui +10 milhões de downloads
+     * Inclui dicionário de termos e série #HugoEnsina
+  2. Hand Talk Plugin - Solução para sites empresariais
+     * +1000 sites utilizam
+     * +50 milhões de palavras traduzidas por mês
+     * +15 milhões de pessoas usuárias anualmente
+     * Inclui relatórios de desempenho e garantia de compliance
+  3. HT Academy - Plataforma de ensino de Libras
+
+- Tecnologia: Usa Inteligência Artificial para tradução automática
+- Impacto: Conecta empresas à comunidade surda e PCDs (Pessoas com Deficiência)
+- Reconhecimentos: Premiada pelo Google (R$ 5 milhões no Desafio Google de Impacto em IA) e pela ONU
+
+REGRAS IMPORTANTES:
+1. Responda APENAS perguntas relacionadas à Hand Talk, seus produtos, serviços, tecnologia, acessibilidade, Libras, surdez ou inclusão
+2. Se o usuário perguntar sobre assuntos NÃO relacionados (clima, esportes, notícias gerais, etc.), responda educadamente: "Desculpe, sou especializado apenas em assuntos relacionados à Hand Talk e acessibilidade. Posso ajudar com informações sobre nossos produtos, Libras, ou tecnologias assistivas?"
+3. Seja sempre amigável, prestativo e conciso
+4. Direcione o usuário para handtalk.me quando apropriado`;
 
   constructor(
     @InjectRepository(ChatMessage)
     private messageRepository: Repository<ChatMessage>,
     private configService: ConfigService,
   ) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+    const apiKey = this.configService.get<string>('NVIDIA_API_KEY');
     if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
+      this.model = new ChatOpenAI({
+        apiKey,
+        modelName: 'moonshotai/kimi-k2-instruct-0905',
+        temperature: 0.6,
+        topP: 0.9,
+        maxTokens: 4096,
+        configuration: {
+          baseURL: 'https://integrate.api.nvidia.com/v1',
+        },
+      });
+
+      const prompt = ChatPromptTemplate.fromMessages([
+        ['system', this.HAND_TALK_SYSTEM_PROMPT],
+        ['human', '{input}'],
+      ]);
+
+      this.chain = RunnableSequence.from([prompt, this.model, new StringOutputParser()]);
+      this.logger.log('LangChain agent initialized with NVIDIA API');
     } else {
-      this.logger.warn('OpenAI API key not configured, using mock responses');
+      this.logger.warn('NVIDIA API key not configured, using mock responses');
     }
   }
 
@@ -68,46 +118,27 @@ export class ChatService {
     let responseContent: string;
     let metadata: object = {};
 
-    if (this.openai) {
+    if (this.chain) {
       try {
-        const history = await this.getChatHistory(userId, sessionId, 10);
-        const messages = [
-          {
-            role: 'system' as const,
-            content: 'Você é um assistente virtual amigável e prestativo da Hand Talk. Responda de forma concisa e útil.',
-          },
-          ...history.reverse().map((msg) => ({
-            role: msg.role as 'user' | 'assistant' | 'system',
-            content: msg.content,
-          })),
-        ];
-
-        const completion = await this.openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages,
-          max_tokens: 500,
-          temperature: 0.7,
-        });
-
-        responseContent = completion.choices[0]?.message?.content || 'Desculpe, não consegui processar sua mensagem.';
+        responseContent = await this.chain.invoke({ input: message });
         metadata = {
-          model: completion.model,
-          tokensUsed: completion.usage?.total_tokens,
-          finishReason: completion.choices[0]?.finish_reason,
+          model: 'moonshotai/kimi-k2-instruct-0905',
+          provider: 'nvidia',
+          framework: 'langchain',
         };
       } catch (error) {
-        this.logger.error('OpenAI API error:', error);
+        this.logger.error('LangChain/NVIDIA API error:', error);
         responseContent = this.getMockResponse(message);
-        metadata = { source: 'mock', error: 'openai_api_error' };
+        metadata = { source: 'mock', error: 'langchain_api_error' };
       }
     } else {
       responseContent = this.getMockResponse(message);
       metadata = { source: 'mock', reason: 'no_api_key' };
     }
 
-    await this.saveMessage(userId, MessageRole.ASSISTANT, responseContent, sessionId);
+    const savedMessage = await this.saveMessage(userId, MessageRole.ASSISTANT, responseContent, sessionId);
 
-    return { content: responseContent, metadata };
+    return { content: responseContent, metadata, messageId: savedMessage.id };
   }
 
   private getMockResponse(message: string): string {

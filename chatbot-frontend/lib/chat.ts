@@ -13,7 +13,7 @@ export class ChatService {
   private socket: Socket | null = null;
   private apiUrl: string;
   private messageListeners: ((message: ChatMessage) => void)[] = [];
-  private responseListeners: ((response: { content: string; metadata?: object }) => void)[] = [];
+  private responseListeners: ((response: { content: string; metadata?: object; messageId?: string }) => void)[] = [];
   private typingListeners: ((data: { userId: string; typing: boolean }) => void)[] = [];
   private errorListeners: ((error: { message: string }) => void)[] = [];
 
@@ -42,7 +42,7 @@ export class ChatService {
       telemetry.setSessionId(data.sessionId);
     });
 
-    this.socket.on('chat:response', (data: { content: string; metadata?: object; timestamp: string }) => {
+    this.socket.on('chat:response', (data: { content: string; metadata?: object; timestamp: string; messageId?: string }) => {
       const source = data.metadata && 'source' in data.metadata ? (data.metadata.source as 'ai' | 'mock') : 'mock';
       // Response time is tracked in sendMessage
       telemetry.trackBotResponse(data.content, source);
@@ -105,7 +105,7 @@ export class ChatService {
     };
   }
 
-  onResponse(callback: (response: { content: string; metadata?: object }) => void) {
+  onResponse(callback: (response: { content: string; metadata?: object; messageId?: string }) => void) {
     this.responseListeners.push(callback);
     return () => {
       this.responseListeners = this.responseListeners.filter(l => l !== callback);

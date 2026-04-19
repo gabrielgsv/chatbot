@@ -44,7 +44,7 @@ export default function ChatPage() {
     const unsubscribeResponse = chatService.onResponse((response) => {
       setIsLoading(false);
       const assistantMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: response.messageId || Date.now().toString(),
         role: 'assistant',
         content: response.content,
         timestamp: new Date().toISOString(),
@@ -181,14 +181,6 @@ export default function ChatPage() {
                 <h1 className="font-semibold text-gray-900 dark:text-white">
                   Hand Talk Assistant
                 </h1>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={isConnected ? 'default' : 'destructive'}
-                    className="gap-1"
-                  >
-                    {isConnected ? 'Online' : 'Offline'}
-                  </Badge>
-                </div>
               </div>
             </div>
             <Button
@@ -245,8 +237,8 @@ export default function ChatPage() {
                             <button
                               onClick={() => handleFeedback(message.id, true)}
                               className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${feedbackMap[message.id] === true
-                                  ? 'text-green-500'
-                                  : 'text-gray-400 dark:text-gray-500'
+                                ? 'text-green-500'
+                                : 'text-gray-400 dark:text-gray-500'
                                 }`}
                               aria-label="Aprovar resposta"
                               disabled={feedbackMap[message.id] !== undefined}
@@ -256,8 +248,8 @@ export default function ChatPage() {
                             <button
                               onClick={() => handleFeedback(message.id, false)}
                               className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${feedbackMap[message.id] === false
-                                  ? 'text-red-500'
-                                  : 'text-gray-400 dark:text-gray-500'
+                                ? 'text-red-500'
+                                : 'text-gray-400 dark:text-gray-500'
                                 }`}
                               aria-label="Reprovar resposta"
                               disabled={feedbackMap[message.id] !== undefined}

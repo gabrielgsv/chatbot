@@ -90,6 +90,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         content: response.content,
         metadata: response.metadata,
         timestamp: new Date().toISOString(),
+        messageId: response.messageId,
       });
     } catch (error) {
       this.logger.error('Error processing message:', error);
