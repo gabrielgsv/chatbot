@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: chatbot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: H4ndT@lk!2026#Secur3P@ss
+      POSTGRES_DB: chatbot
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./chatbot-backend
+      dockerfile: Dockerfile
+    container_name: chatbot-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: H4ndT@lk!2026#Secur3P@ss
+      DB_DATABASE: chatbot
+      DB_SYNCHRONIZE: "true"
+      JWT_SECRET: your-super-secret-jwt-key-for-handtalk-ast-2026
+      PORT: 3001
+      NODE_ENV: production
+    ports:
+      - '3001:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

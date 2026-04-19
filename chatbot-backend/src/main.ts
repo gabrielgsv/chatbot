@@ -12,7 +12,6 @@ async function bootstrap() {
   };
   app.enableCors(corsOptions);
 
-  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Chatbot Data Collection API')
     .setDescription('Backend API for user registration and data collection')
@@ -22,7 +21,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 4000);
+  await app.listen(process.env.PORT ?? 3001);
 }
 
 bootstrap().catch((error) => {

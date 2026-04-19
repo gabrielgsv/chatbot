@@ -93,14 +93,10 @@ export async function authenticate(
         ...(phone && { phone }),
       };
 
-  console.log('[Auth] Enviando requisição:', { endpoint, body });
-
   try {
     const data = await ky
       .post(`${API_URL}/${endpoint}`, { json: body })
       .json<AuthResponse>();
-
-    console.log('[Auth] Resposta recebida:', data);
 
     if (data.erros && Array.isArray(data.erros)) {
       const serverErrors: ValidationErrors = {};
@@ -115,7 +111,6 @@ export async function authenticate(
     }
 
     if (isLogin && data.access_token) {
-      // Retorna token para o Service Worker armazenar
       return {
         errors: {},
         message: '',
@@ -132,8 +127,6 @@ export async function authenticate(
       success: true,
     };
   } catch (error) {
-    console.error('[Auth] Erro na requisição:', error);
-
     if (error instanceof HTTPError) {
       const status = error.response.status;
 
@@ -143,12 +136,9 @@ export async function authenticate(
       try {
         const errorResponse = error.response.clone();
         const errorData = await errorResponse.json();
-        
-        console.log('[Auth] Dados do erro da API:', errorData);
 
         if (errorData.message) {
           errorMessage = errorData.message;
-          console.log('[Auth] Usando mensagem do backend:', errorMessage);
         }
         
         if (errorData.erros && Array.isArray(errorData.erros)) {
@@ -157,7 +147,7 @@ export async function authenticate(
           });
         }
       } catch (parseError) {
-        console.log('[Auth] Não conseguiu parsear JSON do erro, usando mensagem padrão do status:', status);
+        // Usar mensagem padrão
       }
 
       if (Object.keys(fieldErrorsResult).length > 0) {

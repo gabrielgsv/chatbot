@@ -33,7 +33,6 @@ export class UsersController {
       whitelist: true,
       forbidNonWhitelisted: true,
       exceptionFactory: (errors) => {
-        console.log('Method exceptionFactory called with errors:', errors);
         const messageTranslations: Record<string, string> = {
           'email must be an email': 'Formato de e-mail inválido',
           'password must be longer than or equal to 6 characters':

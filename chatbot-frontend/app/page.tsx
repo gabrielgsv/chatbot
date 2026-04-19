@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { Button, Card, Chip } from "@heroui/react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   return (
@@ -9,9 +11,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-20">
           <div className="text-center">
             <div className="mb-8 inline-flex items-center justify-center rounded-full bg-blue-100 px-4 py-2 dark:bg-blue-900">
-              <Chip color="default" variant="soft" size="sm">
-                Plataforma Chatbot
-              </Chip>
+              <Badge variant="secondary">Plataforma Chatbot</Badge>
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl">
               Chatbot Inteligente
@@ -23,19 +23,12 @@ export default function Home() {
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Link href="/auth">
-                <Button
-                  size="lg"
-                  className="px-8 py-3 bg-blue-600 text-white hover:bg-blue-700"
-                >
+                <Button size="lg" className="px-8 py-3 h-auto bg-blue-600 text-white hover:bg-blue-700">
                   Começar Agora
                 </Button>
               </Link>
               <Link href="/chat">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="px-8 py-3"
-                >
+                <Button variant="outline" size="lg" className="px-8 py-3 h-auto">
                   Testar Demo
                 </Button>
               </Link>
@@ -61,101 +54,89 @@ export default function Home() {
           </div>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <div className="border-none shadow-lg rounded-xl bg-white p-6 dark:bg-gray-800">
-              <div className="flex flex-col items-center pb-0 pt-6">
+            <Card className="border-none shadow-lg dark:bg-gray-800">
+              <CardContent className="flex flex-col items-center pt-6">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
                   <svg className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                 </div>
                 <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">Conversas Naturais</h3>
-              </div>
-              <div className="text-center mt-4">
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-center mt-4 text-gray-600 dark:text-gray-300">
                   Recursos avançados de PLN para interações humanas e compreensão contextual
                 </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="border-none shadow-lg rounded-xl bg-white p-6 dark:bg-gray-800">
-              <div className="flex flex-col items-center pb-0 pt-6">
+            <Card className="border-none shadow-lg dark:bg-gray-800">
+              <CardContent className="flex flex-col items-center pt-6">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
                   <svg className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
                 <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">Autenticação Segura</h3>
-              </div>
-              <div className="text-center mt-4">
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-center mt-4 text-gray-600 dark:text-gray-300">
                   Autenticação baseada em JWT com transmissão de dados criptografada e proteção de privacidade
                 </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="border-none shadow-lg rounded-xl bg-white p-6 dark:bg-gray-800">
-              <div className="flex flex-col items-center pb-0 pt-6">
+            <Card className="border-none shadow-lg dark:bg-gray-800">
+              <CardContent className="flex flex-col items-center pt-6">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900">
                   <svg className="h-8 w-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
                 <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">Ultra Rápido</h3>
-              </div>
-              <div className="text-center mt-4">
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-center mt-4 text-gray-600 dark:text-gray-300">
                   Performance otimizada com respostas em tempo real e latência mínima
                 </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="border-none shadow-lg rounded-xl bg-white p-6 dark:bg-gray-800">
-              <div className="flex flex-col items-center pb-0 pt-6">
+            <Card className="border-none shadow-lg dark:bg-gray-800">
+              <CardContent className="flex flex-col items-center pt-6">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900">
                   <svg className="h-8 w-8 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
                 <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">Aprendizado Inteligente</h3>
-              </div>
-              <div className="text-center mt-4">
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-center mt-4 text-gray-600 dark:text-gray-300">
                   Melhora continuamente com as interações para fornecer respostas melhores ao longo do tempo
                 </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="border-none shadow-lg rounded-xl bg-white p-6 dark:bg-gray-800">
-              <div className="flex flex-col items-center pb-0 pt-6">
+            <Card className="border-none shadow-lg dark:bg-gray-800">
+              <CardContent className="flex flex-col items-center pt-6">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
                   <svg className="h-8 w-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                   </svg>
                 </div>
                 <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">Persistência de Dados</h3>
-              </div>
-              <div className="text-center mt-4">
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-center mt-4 text-gray-600 dark:text-gray-300">
                   Banco de dados PostgreSQL com armazenamento confiável e histórico de conversas
                 </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="border-none shadow-lg rounded-xl bg-white p-6 dark:bg-gray-800">
-              <div className="flex flex-col items-center pb-0 pt-6">
+            <Card className="border-none shadow-lg dark:bg-gray-800">
+              <CardContent className="flex flex-col items-center pt-6">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900">
                   <svg className="h-8 w-8 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
                 </div>
                 <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">Integração de API</h3>
-              </div>
-              <div className="text-center mt-4">
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-center mt-4 text-gray-600 dark:text-gray-300">
                   API RESTful com documentação completa para integração perfeita
                 </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -176,22 +157,22 @@ export default function Home() {
             <div className="text-center">
               <h3 className="mb-6 text-2xl font-semibold text-gray-900 dark:text-white">Frontend</h3>
               <div className="flex flex-wrap justify-center gap-4">
-                <Chip color="default" variant="soft" size="lg">Next.js 16</Chip>
-                <Chip color="default" variant="soft" size="lg">React 19</Chip>
-                <Chip color="default" variant="soft" size="lg">HeroUI</Chip>
-                <Chip color="default" variant="soft" size="lg">Tailwind CSS</Chip>
-                <Chip color="default" variant="soft" size="lg">TypeScript</Chip>
+                <Badge variant="outline" className="text-sm py-1 px-3">Next.js 16</Badge>
+                <Badge variant="outline" className="text-sm py-1 px-3">React 19</Badge>
+                <Badge variant="outline" className="text-sm py-1 px-3">shadcn/ui</Badge>
+                <Badge variant="outline" className="text-sm py-1 px-3">Tailwind CSS</Badge>
+                <Badge variant="outline" className="text-sm py-1 px-3">TypeScript</Badge>
               </div>
             </div>
 
             <div className="text-center">
               <h3 className="mb-6 text-2xl font-semibold text-gray-900 dark:text-white">Backend</h3>
               <div className="flex flex-wrap justify-center gap-4">
-                <Chip color="default" variant="soft" size="lg">NestJS</Chip>
-                <Chip color="default" variant="soft" size="lg">Node.js</Chip>
-                <Chip color="default" variant="soft" size="lg">PostgreSQL</Chip>
-                <Chip color="default" variant="soft" size="lg">TypeORM</Chip>
-                <Chip color="default" variant="soft" size="lg">JWT Auth</Chip>
+                <Badge variant="outline" className="text-sm py-1 px-3">NestJS</Badge>
+                <Badge variant="outline" className="text-sm py-1 px-3">Node.js</Badge>
+                <Badge variant="outline" className="text-sm py-1 px-3">PostgreSQL</Badge>
+                <Badge variant="outline" className="text-sm py-1 px-3">TypeORM</Badge>
+                <Badge variant="outline" className="text-sm py-1 px-3">JWT Auth</Badge>
               </div>
             </div>
           </div>
@@ -201,35 +182,30 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="border-none bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl p-16">
-            <div className="text-center">
-              <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
-                Pronto para Começar?
-              </h2>
-              <p className="mb-8 text-lg opacity-90">
-                Junte-se a milhares de usuários experimentando o futuro das conversas automatizadas
-              </p>
-              <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-                <Link href="/auth">
-                  <Button
-                    size="lg"
-                    className="px-8 py-3 bg-white text-blue-600 hover:bg-gray-100"
-                  >
-                    Cadastrar Agora
-                  </Button>
-                </Link>
-                <Link href="/auth">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="px-8 py-3 border-white text-white hover:bg-white hover:text-blue-600"
-                  >
-                    Saiba Mais
-                  </Button>
-                </Link>
+          <Card className="border-none bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <CardContent className="p-16">
+              <div className="text-center">
+                <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+                  Pronto para Começar?
+                </h2>
+                <p className="mb-8 text-lg opacity-90">
+                  Junte-se a milhares de usuários experimentando o futuro das conversas automatizadas
+                </p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+                  <Link href="/auth">
+                    <Button size="lg" className="px-8 py-3 h-auto bg-white text-blue-600 hover:bg-gray-100">
+                      Cadastrar Agora
+                    </Button>
+                  </Link>
+                  <Link href="/auth">
+                    <Button variant="outline" size="lg" className="px-8 py-3 h-auto border-white text-white hover:bg-white hover:text-blue-600">
+                      Saiba Mais
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>

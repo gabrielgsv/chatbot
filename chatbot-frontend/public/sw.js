@@ -1,28 +1,21 @@
-// Service Worker para gerenciamento seguro de tokens
-// Debug: DevTools → Application → Service Workers
-
 const SW_VERSION = 'v1';
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
-// Instalação
 self.addEventListener('install', (event) => {
   console.log('[SW] Instalando...');
   self.skipWaiting();
 });
 
-// Ativação
 self.addEventListener('activate', (event) => {
   console.log('[SW] Ativado!');
   event.waitUntil(self.clients.claim());
 });
 
-// Comunicação com a aplicação (postMessage)
 self.addEventListener('message', async (event) => {
   console.log('[SW] Mensagem raw recebida:', event.data);
   console.log('[SW] Ports disponíveis:', event.ports?.length);
 
-  // Quando usa MessageChannel, a resposta deve ser via event.ports[0]
   const responsePort = event.ports && event.ports[0] ? event.ports[0] : event.source;
 
   if (!responsePort) {
@@ -96,12 +89,10 @@ self.addEventListener('message', async (event) => {
   }
 });
 
-// Interceptar requisições fetch e adicionar o token automaticamente
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Só intercepta requisições para a API
   if (url.pathname.startsWith('/api') || url.port === '3000') {
     event.respondWith(handleAPIRequest(request));
   }
@@ -112,7 +103,6 @@ async function handleAPIRequest(request) {
     const token = await getToken();
 
     if (token) {
-      // Clone a requisição para adicionar o header
       const newHeaders = new Headers(request.headers);
       newHeaders.set('Authorization', `Bearer ${token}`);
 
@@ -131,7 +121,6 @@ async function handleAPIRequest(request) {
   }
 }
 
-// Armazenamento usando Cache API (acessível só dentro do SW)
 async function setToken(token, user) {
   const cache = await caches.open(SW_VERSION);
   const tokenData = new Response(JSON.stringify({ token, user, timestamp: Date.now() }));
