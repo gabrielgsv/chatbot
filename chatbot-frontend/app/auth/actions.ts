@@ -11,7 +11,15 @@ interface ValidationErrors {
 
 interface AuthResponse {
   access_token?: string;
-  user?: object;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+    phone?: string;
+    role?: 'user' | 'admin';
+    createdAt?: string;
+    updatedAt?: string;
+  };
   erros?: Array<{ campo: string; mensagem: string }>;
   message?: string;
 }
@@ -62,7 +70,15 @@ export interface AuthResult {
   success: boolean;
   redirect?: string;
   access_token?: string;
-  user?: object;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+    phone?: string;
+    role?: 'user' | 'admin';
+    createdAt?: string;
+    updatedAt?: string;
+  };
 }
 
 export async function authenticate(

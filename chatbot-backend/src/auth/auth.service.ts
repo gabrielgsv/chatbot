@@ -8,7 +8,7 @@ export class AuthService {
   constructor(private jwtService: JwtService) {}
 
   async login(user: User) {
-    const payload = { email: user.email, sub: user.id };
+    const payload = { email: user.email, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -16,6 +16,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         phone: user.phone,
+        role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

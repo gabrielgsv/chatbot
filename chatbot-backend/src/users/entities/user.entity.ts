@@ -25,6 +25,9 @@ export class User {
   @Column({ nullable: true })
   phone?: string;
 
+  @Column({ type: 'enum', enum: ['user', 'admin'], default: 'user' })
+  role!: 'user' | 'admin';
+
   @CreateDateColumn()
   createdAt!: Date;
 

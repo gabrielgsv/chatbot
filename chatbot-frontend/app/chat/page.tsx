@@ -28,9 +28,20 @@ export default function ChatPage() {
   // Authentication check and connection
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
+    const userStr = localStorage.getItem('user');
+
     if (!token) {
       router.push('/auth');
       return;
+    }
+
+    // Redirect admin to dashboard
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user.role === 'admin') {
+        router.push('/admin/dashboard');
+        return;
+      }
     }
 
     // Set up telemetry auth
