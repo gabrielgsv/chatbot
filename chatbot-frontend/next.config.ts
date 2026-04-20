@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Necessário para Service Workers em desenvolvimento
-  async headers() {
+output: 'standalone',
+// Necessário para Service Workers em desenvolvimento
+async headers() {
     return [
       {
         source: '/sw.js',
