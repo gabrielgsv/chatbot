@@ -19,7 +19,6 @@ export class UsersService {
   async signup(signupDto: SignupDto): Promise<User> {
     const { email, password, name, phone } = signupDto;
 
-    // Check if user already exists
     const existingUser = await this.userRepository.findOne({
       where: { email },
     });
@@ -27,11 +26,9 @@ export class UsersService {
       throw new ConflictException('E-mail já registrado');
     }
 
-    // Hash password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Create user
     const user = this.userRepository.create({
       email,
       password: hashedPassword,

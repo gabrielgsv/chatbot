@@ -23,7 +23,6 @@ async function seedAdmin() {
 
   const userRepository = dataSource.getRepository(User);
 
-  // Check if admin exists
   const existingAdmin = await userRepository.findOne({
     where: { email: 'admin@handtalk.com' },
   });
@@ -34,7 +33,6 @@ async function seedAdmin() {
     await userRepository.save(existingAdmin);
     console.log('Admin user updated successfully!');
   } else {
-    // Generate hash with bcrypt (same as UsersService)
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash('admin123', saltRounds);
 

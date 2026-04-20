@@ -97,7 +97,6 @@ export class TelemetryService {
     );
   }
 
-  // Admin methods
   async getAllStats(): Promise<{
     totalEvents: number;
     eventsByType: Record<string, number>;

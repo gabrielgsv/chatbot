@@ -99,7 +99,6 @@ export class TelemetryController {
     };
   }
 
-  // Admin endpoints
   @UseGuards(AdminGuard)
   @Get('admin/stats')
   @ApiOperation({ summary: 'Get all telemetry statistics (Admin only)' })
