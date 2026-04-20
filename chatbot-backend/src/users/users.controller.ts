@@ -9,8 +9,9 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { SignupDto } from './dtos/signup.dto';
 import { LoginDto } from './dtos/login.dto';
@@ -141,7 +142,7 @@ export class UsersController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Request() req: any) {
+  login(@Request() req: { user: User }) {
     return this.authService.login(req.user);
   }
 }

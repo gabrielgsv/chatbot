@@ -1,4 +1,11 @@
-import { IsArray, IsEnum, IsJSON, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { EventType } from '../entities/telemetry-event.entity';
 

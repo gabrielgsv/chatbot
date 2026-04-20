@@ -321,6 +321,7 @@ export const telemetry = new TelemetryService();
 export function useTypingTracker() {
   return {
     handleTypingStart: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     handleTypingEnd: (_content: string) => {},
   };
 }

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TelemetryService } from './telemetry.service';
@@ -9,8 +11,6 @@ import { Repository } from 'typeorm';
 
 describe('TelemetryService', () => {
   let service: TelemetryService;
-  let telemetryRepository: jest.Mocked<Repository<TelemetryEvent>>;
-  let chatMessageRepository: jest.Mocked<Repository<ChatMessage>>;
 
   const mockTelemetryEvent: TelemetryEvent = {
     id: 'test-uuid',
@@ -87,7 +87,9 @@ describe('TelemetryService', () => {
       };
 
       mockTelemetryRepository.create.mockReturnValue(mockTelemetryEvent);
-      mockTelemetryRepository.insert.mockResolvedValue({ identifiers: [{ id: 'test-uuid' }] } as any);
+      mockTelemetryRepository.insert.mockResolvedValue({
+        identifiers: [{ id: 'test-uuid' }],
+      } as any);
 
       const result = await service.createBatch(userId, batchDto);
 
@@ -119,7 +121,9 @@ describe('TelemetryService', () => {
       };
 
       mockTelemetryRepository.create.mockReturnValue(mockTelemetryEvent);
-      mockTelemetryRepository.insert.mockResolvedValue({ identifiers: [{ id: '1' }, { id: '2' }] } as any);
+      mockTelemetryRepository.insert.mockResolvedValue({
+        identifiers: [{ id: '1' }, { id: '2' }],
+      } as any);
 
       const result = await service.createBatch(userId, batchDto);
 
@@ -139,7 +143,9 @@ describe('TelemetryService', () => {
       };
 
       mockTelemetryRepository.create.mockReturnValue(mockTelemetryEvent);
-      mockTelemetryRepository.insert.mockResolvedValue({ identifiers: [] } as any);
+      mockTelemetryRepository.insert.mockResolvedValue({
+        identifiers: [],
+      } as any);
 
       await service.createBatch(userId, batchDto);
 
@@ -162,7 +168,9 @@ describe('TelemetryService', () => {
       };
 
       mockTelemetryRepository.create.mockReturnValue(mockTelemetryEvent);
-      mockTelemetryRepository.insert.mockResolvedValue({ identifiers: [] } as any);
+      mockTelemetryRepository.insert.mockResolvedValue({
+        identifiers: [],
+      } as any);
 
       await service.createBatch(userId, batchDto);
 
@@ -188,13 +196,23 @@ describe('TelemetryService', () => {
         getMany: jest.fn().mockResolvedValue([mockTelemetryEvent]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findByUser(userId, query);
 
-      expect(mockTelemetryRepository.createQueryBuilder).toHaveBeenCalledWith('event');
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('event.userId = :userId', { userId });
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('event.timestamp', 'DESC');
+      expect(mockTelemetryRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'event',
+      );
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'event.userId = :userId',
+        { userId },
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'event.timestamp',
+        'DESC',
+      );
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(100);
       expect(result).toEqual([mockTelemetryEvent]);
     });
@@ -211,13 +229,18 @@ describe('TelemetryService', () => {
         getMany: jest.fn().mockResolvedValue([mockTelemetryEvent]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.findByUser(userId, query);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('event.eventType = :eventType', {
-        eventType: EventType.USER_MESSAGE,
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'event.eventType = :eventType',
+        {
+          eventType: EventType.USER_MESSAGE,
+        },
+      );
     });
 
     it('should filter by startDate', async () => {
@@ -232,13 +255,18 @@ describe('TelemetryService', () => {
         getMany: jest.fn().mockResolvedValue([mockTelemetryEvent]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.findByUser(userId, query);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('event.timestamp >= :startDate', {
-        startDate: expect.any(Date),
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'event.timestamp >= :startDate',
+        {
+          startDate: expect.any(Date),
+        },
+      );
     });
 
     it('should filter by endDate', async () => {
@@ -253,13 +281,18 @@ describe('TelemetryService', () => {
         getMany: jest.fn().mockResolvedValue([mockTelemetryEvent]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.findByUser(userId, query);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('event.timestamp <= :endDate', {
-        endDate: expect.any(Date),
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'event.timestamp <= :endDate',
+        {
+          endDate: expect.any(Date),
+        },
+      );
     });
 
     it('should filter by sessionId', async () => {
@@ -274,13 +307,18 @@ describe('TelemetryService', () => {
         getMany: jest.fn().mockResolvedValue([mockTelemetryEvent]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.findByUser(userId, query);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('event.sessionId = :sessionId', {
-        sessionId: 'session-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'event.sessionId = :sessionId',
+        {
+          sessionId: 'session-123',
+        },
+      );
     });
 
     it('should respect custom limit', async () => {
@@ -294,7 +332,9 @@ describe('TelemetryService', () => {
         getMany: jest.fn().mockResolvedValue([mockTelemetryEvent]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.findByUser(userId, query);
 
@@ -312,7 +352,9 @@ describe('TelemetryService', () => {
         getMany: jest.fn().mockResolvedValue([mockTelemetryEvent]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.findByUser(userId, query);
 
@@ -335,7 +377,9 @@ describe('TelemetryService', () => {
         ]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getUserStats(userId);
 
@@ -356,7 +400,9 @@ describe('TelemetryService', () => {
         getRawMany: jest.fn().mockResolvedValue([]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getUserStats(userId);
 
@@ -377,14 +423,17 @@ describe('TelemetryService', () => {
           { type: EventType.USER_MESSAGE, count: '50' },
           { type: EventType.BOT_RESPONSE, count: '50' },
         ]),
-        getRawOne: jest.fn()
+        getRawOne: jest
+          .fn()
           .mockResolvedValueOnce({ count: '10' })
           .mockResolvedValueOnce({ count: '5' })
           .mockResolvedValueOnce({ count: '8' })
           .mockResolvedValueOnce({ count: '10' }),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getAllStats();
 
@@ -414,7 +463,9 @@ describe('TelemetryService', () => {
         ]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getEventsTimeline(30);
 
@@ -434,7 +485,9 @@ describe('TelemetryService', () => {
         getRawMany: jest.fn().mockResolvedValue([]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.getEventsTimeline();
 
@@ -466,7 +519,9 @@ describe('TelemetryService', () => {
         ]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getTopUsers(10);
 
@@ -493,7 +548,9 @@ describe('TelemetryService', () => {
         getRawMany: jest.fn().mockResolvedValue([]),
       };
 
-      mockTelemetryRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockTelemetryRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.getTopUsers();
 
@@ -560,7 +617,9 @@ describe('TelemetryService', () => {
         ]),
       };
 
-      mockChatMessageRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockChatMessageRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getFrequentQuestions(10);
 
@@ -582,7 +641,9 @@ describe('TelemetryService', () => {
         getRawMany: jest.fn().mockResolvedValue([]),
       };
 
-      mockChatMessageRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockChatMessageRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.getFrequentQuestions();
 
@@ -601,11 +662,16 @@ describe('TelemetryService', () => {
         getRawMany: jest.fn().mockResolvedValue([]),
       };
 
-      mockChatMessageRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockChatMessageRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.getFrequentQuestions(10);
 
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith("message.role = :role", { role: MessageRole.USER });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'message.role = :role',
+        { role: MessageRole.USER },
+      );
     });
   });
 });

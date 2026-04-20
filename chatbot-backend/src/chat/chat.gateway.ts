@@ -8,7 +8,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from '../auth/constants';
@@ -16,6 +16,10 @@ import { jwtConstants } from '../auth/constants';
 interface AuthenticatedSocket extends Socket {
   userId?: string;
   sessionId?: string;
+}
+
+interface JwtPayload {
+  sub: string;
 }
 
 @WebSocketGateway({
@@ -35,7 +39,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService: JwtService,
   ) {}
 
-  async handleConnection(client: AuthenticatedSocket) {
+  handleConnection(client: AuthenticatedSocket) {
     try {
       const token = client.handshake.auth.token as string;
       if (!token) {
@@ -44,15 +48,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const payload = this.jwtService.verify(token, {
+      const payload = this.jwtService.verify<JwtPayload>(token, {
         secret: jwtConstants.secret,
       });
-      
-      client.userId = payload.sub as string;
-      client.sessionId = client.handshake.auth.sessionId as string || this.generateSessionId();
-      
+
+      client.userId = payload.sub;
+      client.sessionId =
+        (client.handshake.auth.sessionId as string) || this.generateSessionId();
+
       this.logger.log(`Client connected: ${client.id}, user: ${client.userId}`);
-      
+
       client.emit('session', { sessionId: client.sessionId });
     } catch (error) {
       this.logger.error('Invalid token:', error);
@@ -61,7 +66,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: AuthenticatedSocket) {
-    this.logger.log(`Client disconnected: ${client.id}, user: ${client.userId}`);
+    this.logger.log(
+      `Client disconnected: ${client.id}, user: ${client.userId}`,
+    );
   }
 
   @SubscribeMessage('chat:message')
@@ -99,7 +106,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat:typing')
-  async handleTyping(
+  handleTyping(
     @MessageBody() data: { typing: boolean },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
@@ -112,9 +119,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat:history')
-  async handleGetHistory(
-    @ConnectedSocket() client: AuthenticatedSocket,
-  ) {
+  async handleGetHistory(@ConnectedSocket() client: AuthenticatedSocket) {
     if (!client.userId) {
       client.emit('error', { message: 'Not authenticated' });
       return;
@@ -126,7 +131,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.sessionId,
         50,
       );
-      
+
       client.emit('chat:history', {
         messages: history.reverse(),
       });

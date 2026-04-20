@@ -42,13 +42,17 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should return access token and user data', async () => {
+    it('should return access token and user data', () => {
       const expectedToken = 'jwt-token';
-      const payload = { email: mockUser.email, sub: mockUser.id, role: mockUser.role };
-      
+      const payload = {
+        email: mockUser.email,
+        sub: mockUser.id,
+        role: mockUser.role,
+      };
+
       mockJwtService.sign.mockReturnValue(expectedToken);
 
-      const result = await service.login(mockUser);
+      const result = service.login(mockUser);
 
       expect(jwtService.sign).toHaveBeenCalledWith(payload);
       expect(result).toEqual({
@@ -65,12 +69,12 @@ describe('AuthService', () => {
       });
     });
 
-    it('should include correct payload in JWT', async () => {
+    it('should include correct payload in JWT', () => {
       const expectedToken = 'jwt-token';
-      
+
       mockJwtService.sign.mockReturnValue(expectedToken);
 
-      await service.login(mockUser);
+      service.login(mockUser);
 
       expect(jwtService.sign).toHaveBeenCalledWith({
         email: mockUser.email,
@@ -79,16 +83,16 @@ describe('AuthService', () => {
       });
     });
 
-    it('should handle user with admin role', async () => {
+    it('should handle user with admin role', () => {
       const adminUser: User = {
         ...mockUser,
         role: 'admin',
       };
-      
+
       const expectedToken = 'admin-jwt-token';
       mockJwtService.sign.mockReturnValue(expectedToken);
 
-      const result = await service.login(adminUser);
+      const result = service.login(adminUser);
 
       expect(jwtService.sign).toHaveBeenCalledWith({
         email: adminUser.email,
@@ -98,30 +102,30 @@ describe('AuthService', () => {
       expect(result.user.role).toBe('admin');
     });
 
-    it('should handle user without phone', async () => {
+    it('should handle user without phone', () => {
       const userWithoutPhone: User = {
         ...mockUser,
         phone: undefined,
       };
-      
+
       const expectedToken = 'jwt-token';
       mockJwtService.sign.mockReturnValue(expectedToken);
 
-      const result = await service.login(userWithoutPhone);
+      const result = service.login(userWithoutPhone);
 
       expect(result.user.phone).toBeUndefined();
     });
 
-    it('should handle user without name', async () => {
+    it('should handle user without name', () => {
       const userWithoutName: User = {
         ...mockUser,
         name: undefined,
       };
-      
+
       const expectedToken = 'jwt-token';
       mockJwtService.sign.mockReturnValue(expectedToken);
 
-      const result = await service.login(userWithoutName);
+      const result = service.login(userWithoutName);
 
       expect(result.user.name).toBeUndefined();
     });

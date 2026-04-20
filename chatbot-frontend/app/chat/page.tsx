@@ -17,6 +17,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackMap, setFeedbackMap] = useState<Record<string, boolean | null>>({});
@@ -47,9 +48,12 @@ export default function ChatPage() {
     // Set up telemetry auth
     telemetry.setAuthToken(token);
 
-    // Connect to WebSocket
+    // Connect to WebSocket and update state via callback
     chatService.connect(token);
-    setIsConnected(chatService.isConnected());
+    // Use requestAnimationFrame to avoid cascading renders
+    requestAnimationFrame(() => {
+      setIsConnected(chatService.isConnected());
+    });
 
     // Set up event listeners
     const unsubscribeResponse = chatService.onResponse((response) => {

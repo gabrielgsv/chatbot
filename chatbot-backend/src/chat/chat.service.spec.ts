@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -7,8 +9,6 @@ import { Repository } from 'typeorm';
 
 describe('ChatService', () => {
   let service: ChatService;
-  let messageRepository: jest.Mocked<Repository<ChatMessage>>;
-  let configService: jest.Mocked<ConfigService>;
 
   const mockMessage: ChatMessage = {
     id: 'test-uuid',
@@ -18,7 +18,7 @@ describe('ChatService', () => {
     sessionId: 'session-123',
     metadata: undefined,
     createdAt: new Date(),
-    user: {} as any,
+    user: {} as User,
   };
 
   const mockMessageRepository = {
@@ -47,8 +47,6 @@ describe('ChatService', () => {
     }).compile();
 
     service = module.get<ChatService>(ChatService);
-    messageRepository = module.get(getRepositoryToken(ChatMessage));
-    configService = module.get(ConfigService);
   });
 
   afterEach(() => {
@@ -65,7 +63,12 @@ describe('ChatService', () => {
       mockMessageRepository.create.mockReturnValue(mockMessage);
       mockMessageRepository.save.mockResolvedValue(mockMessage);
 
-      const result = await service.saveMessage(userId, role, content, sessionId);
+      const result = await service.saveMessage(
+        userId,
+        role,
+        content,
+        sessionId,
+      );
 
       expect(mockMessageRepository.create).toHaveBeenCalledWith({
         userId,
@@ -126,13 +129,23 @@ describe('ChatService', () => {
         getMany: jest.fn().mockResolvedValue([mockMessage]),
       };
 
-      mockMessageRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockMessageRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getChatHistory(userId);
 
-      expect(mockMessageRepository.createQueryBuilder).toHaveBeenCalledWith('message');
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('message.userId = :userId', { userId });
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('message.createdAt', 'DESC');
+      expect(mockMessageRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'message',
+      );
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'message.userId = :userId',
+        { userId },
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'message.createdAt',
+        'DESC',
+      );
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(50);
       expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(result).toEqual([mockMessage]);
@@ -149,11 +162,16 @@ describe('ChatService', () => {
         getMany: jest.fn().mockResolvedValue([mockMessage]),
       };
 
-      mockMessageRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockMessageRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getChatHistory(userId, sessionId);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('message.sessionId = :sessionId', { sessionId });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'message.sessionId = :sessionId',
+        { sessionId },
+      );
       expect(result).toEqual([mockMessage]);
     });
 
@@ -167,7 +185,9 @@ describe('ChatService', () => {
         getMany: jest.fn().mockResolvedValue([mockMessage]),
       };
 
-      mockMessageRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockMessageRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.getChatHistory(userId, undefined, limit);
 
@@ -183,7 +203,9 @@ describe('ChatService', () => {
         getMany: jest.fn().mockResolvedValue([]),
       };
 
-      mockMessageRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockMessageRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getChatHistory(userId);
 
@@ -199,10 +221,18 @@ describe('ChatService', () => {
 
       mockConfigService.get.mockReturnValue(null);
 
-      const mockSavedMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
+      const mockSavedMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
       mockMessageRepository.create.mockReturnValue(mockMessage);
-      mockMessageRepository.create.mockReturnValueOnce(mockMessage).mockReturnValueOnce(mockSavedMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockMessage).mockResolvedValueOnce(mockSavedMessage);
+      mockMessageRepository.create
+        .mockReturnValueOnce(mockMessage)
+        .mockReturnValueOnce(mockSavedMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockMessage)
+        .mockResolvedValueOnce(mockSavedMessage);
 
       const result = await service.generateResponse(userId, message, sessionId);
 
@@ -220,10 +250,16 @@ describe('ChatService', () => {
       mockConfigService.get.mockReturnValue(null);
 
       const mockUserMessage = { ...mockMessage, role: MessageRole.USER };
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
-      
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
+
       mockMessageRepository.create.mockReturnValue(mockUserMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockUserMessage).mockResolvedValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockUserMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       await service.generateResponse(userId, message, sessionId);
 
@@ -243,10 +279,19 @@ describe('ChatService', () => {
       mockConfigService.get.mockReturnValue(null);
 
       const mockUserMessage = { ...mockMessage, role: MessageRole.USER };
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT, content: 'Mock response' };
-      
-      mockMessageRepository.create.mockReturnValueOnce(mockUserMessage).mockReturnValueOnce(mockAssistantMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockUserMessage).mockResolvedValueOnce(mockAssistantMessage);
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+        content: 'Mock response',
+      };
+
+      mockMessageRepository.create
+        .mockReturnValueOnce(mockUserMessage)
+        .mockReturnValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockUserMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       const result = await service.generateResponse(userId, message, sessionId);
 
@@ -261,9 +306,15 @@ describe('ChatService', () => {
 
       mockConfigService.get.mockReturnValue(null);
 
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
       mockMessageRepository.create.mockReturnValue(mockMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockMessage).mockResolvedValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       const result = await service.generateResponse(userId, message, sessionId);
 
@@ -277,13 +328,21 @@ describe('ChatService', () => {
 
       mockConfigService.get.mockReturnValue(null);
 
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
       mockMessageRepository.create.mockReturnValue(mockMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockMessage).mockResolvedValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       const result = await service.generateResponse(userId, message, sessionId);
 
-      expect(result.content).toBe('Claro! Estou aqui para ajudar. O que você precisa?');
+      expect(result.content).toBe(
+        'Claro! Estou aqui para ajudar. O que você precisa?',
+      );
     });
 
     it('should return mock response for Hand Talk related messages', async () => {
@@ -293,9 +352,15 @@ describe('ChatService', () => {
 
       mockConfigService.get.mockReturnValue(null);
 
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
       mockMessageRepository.create.mockReturnValue(mockMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockMessage).mockResolvedValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       const result = await service.generateResponse(userId, message, sessionId);
 
@@ -309,13 +374,21 @@ describe('ChatService', () => {
 
       mockConfigService.get.mockReturnValue(null);
 
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
       mockMessageRepository.create.mockReturnValue(mockMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockMessage).mockResolvedValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       const result = await service.generateResponse(userId, message, sessionId);
 
-      expect(result.content).toBe('Por nada! Estou sempre aqui se precisar de mais ajuda.');
+      expect(result.content).toBe(
+        'Por nada! Estou sempre aqui se precisar de mais ajuda.',
+      );
     });
 
     it('should return default mock response for unknown messages', async () => {
@@ -325,9 +398,15 @@ describe('ChatService', () => {
 
       mockConfigService.get.mockReturnValue(null);
 
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
       mockMessageRepository.create.mockReturnValue(mockMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockMessage).mockResolvedValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       const result = await service.generateResponse(userId, message, sessionId);
 
@@ -341,9 +420,15 @@ describe('ChatService', () => {
 
       mockConfigService.get.mockReturnValue(null);
 
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
       mockMessageRepository.create.mockReturnValue(mockMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockMessage).mockResolvedValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       const result = await service.generateResponse(userId, message, sessionId);
 
@@ -356,9 +441,15 @@ describe('ChatService', () => {
 
       mockConfigService.get.mockReturnValue(null);
 
-      const mockAssistantMessage = { ...mockMessage, id: 'assistant-uuid', role: MessageRole.ASSISTANT };
+      const mockAssistantMessage = {
+        ...mockMessage,
+        id: 'assistant-uuid',
+        role: MessageRole.ASSISTANT,
+      };
       mockMessageRepository.create.mockReturnValue(mockMessage);
-      mockMessageRepository.save.mockResolvedValueOnce(mockMessage).mockResolvedValueOnce(mockAssistantMessage);
+      mockMessageRepository.save
+        .mockResolvedValueOnce(mockMessage)
+        .mockResolvedValueOnce(mockAssistantMessage);
 
       const result = await service.generateResponse(userId, message);
 

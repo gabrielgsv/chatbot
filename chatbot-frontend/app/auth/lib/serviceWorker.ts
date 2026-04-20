@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 let swRegistration: ServiceWorkerRegistration | null = null;
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof window === 'undefined') return null;
@@ -13,7 +15,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     await waitForSWActive(registration);
 
     return registration;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -88,9 +90,9 @@ async function sendMessageToSW<T>(type: string, payload?: unknown): Promise<T> {
         { type, payload },
         [channel.port2]
       );
-    } catch (error) {
+    } catch (err) {
       clearTimeout(timeoutId);
-      reject(error);
+      reject(err);
     }
   });
 }

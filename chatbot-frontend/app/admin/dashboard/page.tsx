@@ -9,7 +9,6 @@ import {
   Calendar,
   BarChart3,
   LogOut,
-  ChevronRight,
   Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -101,16 +100,8 @@ export default function AdminDashboardPage() {
     } catch (err) {
       console.error('Erro ao carregar eventos do usuário:', err);
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
+};
+ 
   const formatDateTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('pt-BR', {
       day: '2-digit',

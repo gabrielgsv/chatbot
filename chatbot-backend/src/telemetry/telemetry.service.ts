@@ -1,10 +1,37 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TelemetryEvent, EventType } from './entities/telemetry-event.entity';
+import { TelemetryEvent } from './entities/telemetry-event.entity';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { QueryEventsDto } from './dto/query-events.dto';
 import { ChatMessage, MessageRole } from '../chat/entities/message.entity';
+
+interface EventCountRow {
+  type: string;
+  count: string;
+}
+
+interface UserCountRow {
+  count: string;
+}
+
+interface TimelineRow {
+  date: string;
+  count: string;
+}
+
+interface TopUserRow {
+  userId: string;
+  email: string;
+  name: string;
+  eventCount: string;
+  lastActivity: string;
+}
+
+interface QuestionRow {
+  question: string;
+  count: string;
+}
 
 @Injectable()
 export class TelemetryService {
@@ -24,9 +51,9 @@ export class TelemetryService {
     const events = batchDto.events.map((event) =>
       this.telemetryRepository.create({
         userId,
-        eventType: event.eventType as EventType,
+        eventType: event.eventType,
         timestamp: new Date(event.timestamp),
-        metadata: (event.metadata || {}) as object,
+        metadata: event.metadata || {},
         sessionId: event.sessionId,
         pageUrl: event.pageUrl,
       }),
@@ -86,7 +113,7 @@ export class TelemetryService {
       .addSelect('COUNT(*)', 'count')
       .where('event.userId = :userId', { userId })
       .groupBy('event.eventType')
-      .getRawMany();
+      .getRawMany<EventCountRow>();
 
     return result.reduce(
       (acc, row) => {
@@ -112,7 +139,7 @@ export class TelemetryService {
       .select('event.eventType', 'type')
       .addSelect('COUNT(*)', 'count')
       .groupBy('event.eventType')
-      .getRawMany();
+      .getRawMany<EventCountRow>();
 
     const eventsByType = eventsByTypeResult.reduce(
       (acc, row) => {
@@ -122,11 +149,11 @@ export class TelemetryService {
       {} as Record<string, number>,
     );
 
-    const totalUsers = await this.telemetryRepository
+    const totalUsersResult = await this.telemetryRepository
       .createQueryBuilder('event')
       .select('COUNT(DISTINCT event.userId)', 'count')
-      .getRawOne()
-      .then((r) => parseInt(r.count, 10));
+      .getRawOne<UserCountRow>();
+    const totalUsers = parseInt(totalUsersResult?.count ?? '0', 10);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -137,26 +164,32 @@ export class TelemetryService {
     const monthAgo = new Date(today);
     monthAgo.setMonth(monthAgo.getMonth() - 1);
 
-    const activeUsersToday = await this.telemetryRepository
+    const activeUsersTodayResult = await this.telemetryRepository
       .createQueryBuilder('event')
       .select('COUNT(DISTINCT event.userId)', 'count')
       .where('event.timestamp >= :today', { today })
-      .getRawOne()
-      .then((r) => parseInt(r.count, 10));
+      .getRawOne<UserCountRow>();
+    const activeUsersToday = parseInt(activeUsersTodayResult?.count ?? '0', 10);
 
-    const activeUsersThisWeek = await this.telemetryRepository
+    const activeUsersThisWeekResult = await this.telemetryRepository
       .createQueryBuilder('event')
       .select('COUNT(DISTINCT event.userId)', 'count')
       .where('event.timestamp >= :weekAgo', { weekAgo })
-      .getRawOne()
-      .then((r) => parseInt(r.count, 10));
+      .getRawOne<UserCountRow>();
+    const activeUsersThisWeek = parseInt(
+      activeUsersThisWeekResult?.count ?? '0',
+      10,
+    );
 
-    const activeUsersThisMonth = await this.telemetryRepository
+    const activeUsersThisMonthResult = await this.telemetryRepository
       .createQueryBuilder('event')
       .select('COUNT(DISTINCT event.userId)', 'count')
       .where('event.timestamp >= :monthAgo', { monthAgo })
-      .getRawOne()
-      .then((r) => parseInt(r.count, 10));
+      .getRawOne<UserCountRow>();
+    const activeUsersThisMonth = parseInt(
+      activeUsersThisMonthResult?.count ?? '0',
+      10,
+    );
 
     return {
       totalEvents,
@@ -177,12 +210,12 @@ export class TelemetryService {
 
     const result = await this.telemetryRepository
       .createQueryBuilder('event')
-      .select("DATE(event.timestamp)", 'date')
+      .select('DATE(event.timestamp)', 'date')
       .addSelect('COUNT(*)', 'count')
       .where('event.timestamp >= :startDate', { startDate })
-      .groupBy("DATE(event.timestamp)")
-      .orderBy("DATE(event.timestamp)", 'ASC')
-      .getRawMany();
+      .groupBy('DATE(event.timestamp)')
+      .orderBy('DATE(event.timestamp)', 'ASC')
+      .getRawMany<TimelineRow>();
 
     return result.map((row) => ({
       date: row.date,
@@ -212,7 +245,7 @@ export class TelemetryService {
       .addGroupBy('user.name')
       .orderBy('"eventCount"', 'DESC')
       .limit(limit)
-      .getRawMany();
+      .getRawMany<TopUserRow>();
 
     return result.map((row) => ({
       userId: row.userId,
@@ -239,20 +272,22 @@ export class TelemetryService {
     });
   }
 
-  async getFrequentQuestions(limit: number = 10): Promise<
-    { question: string; count: number }[]
-  > {
+  async getFrequentQuestions(
+    limit: number = 10,
+  ): Promise<{ question: string; count: number }[]> {
     const result = await this.chatMessageRepository
       .createQueryBuilder('message')
       .select('MAX(message.content)', 'question')
       .addSelect('COUNT(*)', 'count')
-      .where("message.role = :role", { role: MessageRole.USER })
-      .andWhere("message.content IS NOT NULL")
+      .where('message.role = :role', { role: MessageRole.USER })
+      .andWhere('message.content IS NOT NULL')
       .andWhere("message.content != ''")
-      .groupBy("LOWER(translate(message.content, 'ÁÂÃÀÄÅáâãàäåÉÊÈËéêèëÍÎÌÏíîìïÓÔÒÕÖóôòõöÚÙÛÜúùûüÇçÑñ', 'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCcNn'))")
+      .groupBy(
+        "LOWER(translate(message.content, 'ÁÂÃÀÄÅáâãàäåÉÊÈËéêèëÍÎÌÏíîìïÓÔÒÕÖóôòõöÚÙÛÜúùûüÇçÑñ', 'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCcNn'))",
+      )
       .orderBy('"count"', 'DESC')
       .limit(limit)
-      .getRawMany();
+      .getRawMany<QuestionRow>();
 
     return result.map((row) => ({
       question: row.question,

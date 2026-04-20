@@ -71,7 +71,11 @@ REGRAS IMPORTANTES:
         ['human', '{input}'],
       ]);
 
-      this.chain = RunnableSequence.from([prompt, this.model, new StringOutputParser()]);
+      this.chain = RunnableSequence.from([
+        prompt,
+        this.model,
+        new StringOutputParser(),
+      ]);
       this.logger.log('LangChain agent initialized with NVIDIA API');
     } else {
       this.logger.warn('NVIDIA API key not configured, using mock responses');
@@ -94,7 +98,11 @@ REGRAS IMPORTANTES:
     return this.messageRepository.save(message);
   }
 
-  async getChatHistory(userId: string, sessionId?: string, limit = 50): Promise<ChatMessage[]> {
+  async getChatHistory(
+    userId: string,
+    sessionId?: string,
+    limit = 50,
+  ): Promise<ChatMessage[]> {
     const qb = this.messageRepository
       .createQueryBuilder('message')
       .where('message.userId = :userId', { userId })
@@ -120,7 +128,10 @@ REGRAS IMPORTANTES:
 
     if (this.chain) {
       try {
-        responseContent = await this.chain.invoke({ input: message });
+        const chainResult = (await this.chain.invoke({
+          input: message,
+        })) as string;
+        responseContent = chainResult;
         metadata = {
           model: 'moonshotai/kimi-k2-instruct-0905',
           provider: 'nvidia',
@@ -136,15 +147,24 @@ REGRAS IMPORTANTES:
       metadata = { source: 'mock', reason: 'no_api_key' };
     }
 
-    const savedMessage = await this.saveMessage(userId, MessageRole.ASSISTANT, responseContent, sessionId);
+    const savedMessage = await this.saveMessage(
+      userId,
+      MessageRole.ASSISTANT,
+      responseContent,
+      sessionId,
+    );
 
     return { content: responseContent, metadata, messageId: savedMessage.id };
   }
 
   private getMockResponse(message: string): string {
     const lowerMsg = message.toLowerCase();
-    
-    if (lowerMsg.includes('oi') || lowerMsg.includes('olá') || lowerMsg.includes('ola')) {
+
+    if (
+      lowerMsg.includes('oi') ||
+      lowerMsg.includes('olá') ||
+      lowerMsg.includes('ola')
+    ) {
       return 'Olá! Como posso ajudar você hoje?';
     }
     if (lowerMsg.includes('ajuda') || lowerMsg.includes('help')) {
@@ -159,7 +179,7 @@ REGRAS IMPORTANTES:
     if (lowerMsg.includes('obrigad')) {
       return 'Por nada! Estou sempre aqui se precisar de mais ajuda.';
     }
-    
+
     return 'Entendi! É um tema interessante. Posso ajudar com mais informações sobre a Hand Talk ou nossos serviços?';
   }
 }

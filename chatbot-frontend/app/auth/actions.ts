@@ -143,11 +143,9 @@ export async function authenticate(
     };
   } catch (error) {
     if (error instanceof HTTPError) {
-      const status = error.response.status;
-
       let errorMessage =
         error.data?.message || "Ocorreu um erro. Tente novamente.";
-      let fieldErrorsResult: ValidationErrors = {};
+      const fieldErrorsResult: ValidationErrors = {};
 
       try {
         const errorResponse = error.response.clone();
@@ -165,7 +163,7 @@ export async function authenticate(
             },
           );
         }
-      } catch (parseError) {
+      } catch {
         // Usar mensagem padrão
       }
 

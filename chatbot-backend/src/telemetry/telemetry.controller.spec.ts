@@ -87,9 +87,9 @@ describe('TelemetryController', () => {
 
       mockTelemetryService.createBatch.mockRejectedValue(error);
 
-      await expect(controller.createBatch(req as any, batchDto)).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      await expect(
+        controller.createBatch(req as any, batchDto),
+      ).rejects.toThrow(InternalServerErrorException);
       expect(service.createBatch).toHaveBeenCalledWith('user-123', batchDto);
     });
   });
@@ -130,7 +130,10 @@ describe('TelemetryController', () => {
   describe('getStats', () => {
     it('should return user statistics', async () => {
       const req = { user: { userId: 'user-123' } };
-      const mockStats = { [EventType.USER_MESSAGE]: 10, [EventType.BOT_RESPONSE]: 5 };
+      const mockStats = {
+        [EventType.USER_MESSAGE]: 10,
+        [EventType.BOT_RESPONSE]: 5,
+      };
 
       mockTelemetryService.getUserStats.mockResolvedValue(mockStats);
 
@@ -274,7 +277,9 @@ describe('TelemetryController', () => {
         { question: 'How does it work?', count: 5 },
       ];
 
-      mockTelemetryService.getFrequentQuestions.mockResolvedValue(mockQuestions);
+      mockTelemetryService.getFrequentQuestions.mockResolvedValue(
+        mockQuestions,
+      );
 
       const result = await controller.getFrequentQuestions(10);
 

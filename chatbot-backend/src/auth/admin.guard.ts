@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   Injectable,
   CanActivate,
@@ -5,14 +7,19 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 
+interface AuthUser {
+  role?: string;
+}
+
 @Injectable()
 export class AdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const user = request.user;
+
+    const user: AuthUser | undefined = request?.user;
 
     if (!user || user.role !== 'admin') {
-      throw new ForbiddenException('Acesso restrito a administradores');
+      throw new ForbiddenException('Acesso restrito a administrador');
     }
 
     return true;

@@ -39,6 +39,7 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
     name: '',
     phone: '',
   });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [swReady, setSwReady] = useState(false);
 
   useEffect(() => {
