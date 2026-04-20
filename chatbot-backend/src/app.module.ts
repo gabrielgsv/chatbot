@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { ChatModule } from './chat/chat.module';
+import { SeedModule } from './scripts/seed.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ChatModule } from './chat/chat.module';
     AuthModule,
     TelemetryModule,
     ChatModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,4 +1,24 @@
 services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: handtalk-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: chatbot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - handtalk-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./chatbot-backend
@@ -10,15 +30,19 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_DATABASE: ${DB_DATABASE}
-      DB_SSL: ${DB_SSL}
-      DB_SYNCHRONIZE: "false"
-      JWT_SECRET: ${JWT_SECRET}
-      NVIDIA_API_KEY: ${NVIDIA_API_KEY}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres123
+      DB_DATABASE: chatbot
+      DB_SSL: "false"
+      DB_SYNCHRONIZE: "true"
+      JWT_SECRET: 29w3unfoiuwne98nc9oq8une9c8nw498ufn9w8ebnf9283h4r982ubn498fnw4ht
+      NVIDIA_API_KEY: sk-mock
+      ALLOWED_ORIGINS: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - handtalk-network
     healthcheck:
@@ -43,13 +67,10 @@ services:
       - backend
     networks:
       - handtalk-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
 networks:
   handtalk-network:
     driver: bridge
+
+volumes:
+  postgres_data:
