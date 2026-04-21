@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { adminTelemetry, TelemetryStats, TopUser, TelemetryEvent, FrequentQuestion } from '@/lib/admin-telemetry';
+import { getTokenFromSW, clearTokenInSW } from '@/app/auth/lib/serviceWorker';
 
 interface UserData {
   id: string;
@@ -37,23 +38,25 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('user');
+    const checkAuth = async () => {
+      const { token, user } = await getTokenFromSW();
 
-    if (!token || !userStr) {
-      router.push('/auth');
-      return;
-    }
+      if (!token || !user) {
+        router.push('/auth');
+        return;
+      }
 
-    const userData: UserData = JSON.parse(userStr);
-    if (userData.role !== 'admin') {
-      router.push('/chat');
-      return;
-    }
+      const userData: UserData = user as UserData;
+      if (userData.role !== 'admin') {
+        router.push('/chat');
+        return;
+      }
 
-    setUser(userData);
-    loadDashboardData();
+      setUser(userData);
+      loadDashboardData();
+    };
+
+    checkAuth();
   }, [router]);
 
   const loadDashboardData = async () => {
@@ -80,9 +83,8 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await clearTokenInSW();
     router.push('/auth');
   };
 
