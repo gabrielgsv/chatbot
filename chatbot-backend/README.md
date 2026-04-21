@@ -93,6 +93,32 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 - Website - [https://nestjs.com](https://nestjs.com/)
 - Twitter - [@nestframework](https://twitter.com/nestframework)
 
+## Database Management
+
+### Development Setup
+
+The database synchronization is disabled by default to prevent accidental schema changes and unnecessary database queries on startup.
+
+### To synchronize the database schema (create/update tables):
+
+```bash
+npm run db:sync
+```
+
+This will enable synchronization for that run only and create/update the necessary tables.
+
+### Normal development startup:
+
+```bash
+npm run start:dev
+```
+
+This starts the application without modifying the database schema.
+
+### Production
+
+In production, synchronization should always be disabled. Use migrations for schema changes.
+
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

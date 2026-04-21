@@ -1,9 +1,27 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { DatabaseModule } from './database/database.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { TelemetryModule } from './telemetry/telemetry.module';
+import { ChatModule } from './chat/chat.module';
+import { SeedModule } from './scripts/seed.module';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    DatabaseModule,
+    UsersModule,
+    AuthModule,
+    TelemetryModule,
+    ChatModule,
+    SeedModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

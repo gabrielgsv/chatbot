@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: handtalk-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: chatbot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - handtalk-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./chatbot-backend
+      dockerfile: Dockerfile
+    container_name: handtalk-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres123
+      DB_DATABASE: chatbot
+      DB_SSL: "false"
+      DB_SYNCHRONIZE: "true"
+      JWT_SECRET: yoursecrethere
+      NVIDIA_API_KEY: sk-mock
+      ALLOWED_ORIGINS: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - handtalk-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./chatbot-frontend
+      dockerfile: Dockerfile
+    container_name: handtalk-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    networks:
+      - handtalk-network
+
+networks:
+  handtalk-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
