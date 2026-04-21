@@ -252,6 +252,7 @@ class TelemetryService {
     this.lastMessageTime = now;
 
     this.track(EventType.USER_MESSAGE, {
+      message: content,
       messageLength: content.length,
       wordCount: content.split(/\s+/).length,
       hasQuestionMark: content.includes('?'),
@@ -320,6 +321,7 @@ export const telemetry = new TelemetryService();
 export function useTypingTracker() {
   return {
     handleTypingStart: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     handleTypingEnd: (_content: string) => {},
   };
 }

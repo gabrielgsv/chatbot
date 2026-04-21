@@ -1,6 +1,6 @@
-import ky, { HTTPError } from 'ky';
+import ky, { HTTPError } from "ky";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 interface ValidationErrors {
   email?: string;
@@ -11,7 +11,15 @@ interface ValidationErrors {
 
 interface AuthResponse {
   access_token?: string;
-  user?: object;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+    phone?: string;
+    role?: "user" | "admin";
+    createdAt?: string;
+    updatedAt?: string;
+  };
   erros?: Array<{ campo: string; mensagem: string }>;
   message?: string;
 }
@@ -33,24 +41,24 @@ function validateForm(
   email: string,
   password: string,
   name: string | undefined,
-  isLogin: boolean
+  isLogin: boolean,
 ): ValidationErrors {
   const errors: ValidationErrors = {};
 
   if (!email.trim()) {
-    errors.email = 'E-mail é obrigatório';
+    errors.email = "E-mail é obrigatório";
   } else if (!validateEmail(email)) {
-    errors.email = 'Formato de e-mail inválido';
+    errors.email = "Formato de e-mail inválido";
   }
 
   if (!password.trim()) {
-    errors.password = 'Senha é obrigatória';
+    errors.password = "Senha é obrigatória";
   } else if (!validatePassword(password)) {
-    errors.password = 'Senha deve ter pelo menos 6 caracteres';
+    errors.password = "Senha deve ter pelo menos 6 caracteres";
   }
 
   if (!isLogin && (!name || !validateName(name))) {
-    errors.name = 'Nome é obrigatório';
+    errors.name = "Nome é obrigatório";
   }
 
   return errors;
@@ -62,7 +70,15 @@ export interface AuthResult {
   success: boolean;
   redirect?: string;
   access_token?: string;
-  user?: object;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+    phone?: string;
+    role?: "user" | "admin";
+    createdAt?: string;
+    updatedAt?: string;
+  };
 }
 
 export async function authenticate(
@@ -70,20 +86,19 @@ export async function authenticate(
   email: string,
   password: string,
   name?: string,
-  phone?: string
+  phone?: string,
 ): Promise<AuthResult> {
-
   const validationErrors = validateForm(email, password, name, isLogin);
 
   if (Object.keys(validationErrors).length > 0) {
     return {
       errors: validationErrors,
-      message: '',
+      message: "",
       success: false,
     };
   }
 
-  const endpoint = isLogin ? 'users/login' : 'users/signup';
+  const endpoint = isLogin ? "users/login" : "users/signup";
   const body = isLogin
     ? { email, password }
     : {
@@ -105,7 +120,7 @@ export async function authenticate(
       });
       return {
         errors: serverErrors,
-        message: data.message || 'Ocorreu um erro. Tente novamente.',
+        message: data.message || "Ocorreu um erro. Tente novamente.",
         success: false,
       };
     }
@@ -113,9 +128,9 @@ export async function authenticate(
     if (isLogin && data.access_token) {
       return {
         errors: {},
-        message: '',
+        message: "",
         success: true,
-        redirect: '/',
+        redirect: "/",
         access_token: data.access_token,
         user: data.user,
       };
@@ -123,15 +138,14 @@ export async function authenticate(
 
     return {
       errors: {},
-      message: 'Conta criada com sucesso! Faça login para continuar.',
+      message: "Conta criada com sucesso! Faça login para continuar.",
       success: true,
     };
   } catch (error) {
     if (error instanceof HTTPError) {
-      const status = error.response.status;
-
-      let errorMessage = error.data?.message || 'Ocorreu um erro. Tente novamente.';
-      let fieldErrorsResult: ValidationErrors = {};
+      let errorMessage =
+        error.data?.message || "Ocorreu um erro. Tente novamente.";
+      const fieldErrorsResult: ValidationErrors = {};
 
       try {
         const errorResponse = error.response.clone();
@@ -140,13 +154,16 @@ export async function authenticate(
         if (errorData.message) {
           errorMessage = errorData.message;
         }
-        
+
         if (errorData.erros && Array.isArray(errorData.erros)) {
-          errorData.erros.forEach((err: { campo: string; mensagem: string }) => {
-            fieldErrorsResult[err.campo as keyof ValidationErrors] = err.mensagem;
-          });
+          errorData.erros.forEach(
+            (err: { campo: string; mensagem: string }) => {
+              fieldErrorsResult[err.campo as keyof ValidationErrors] =
+                err.mensagem;
+            },
+          );
         }
-      } catch (parseError) {
+      } catch {
         // Usar mensagem padrão
       }
 
@@ -167,7 +184,7 @@ export async function authenticate(
 
     return {
       errors: {},
-      message: 'Erro de conexão. Verifique sua internet e tente novamente.',
+      message: "Erro de conexão. Verifique sua internet e tente novamente.",
       success: false,
     };
   }

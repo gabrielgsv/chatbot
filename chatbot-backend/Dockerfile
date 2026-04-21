@@ -1,36 +1,33 @@
-# Build stage
-FROM oven/bun:1 AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lock ./
+COPY package*.json ./
+RUN npm install
 
-# Install dependencies
-RUN bun install --frozen-lockfile
-
-# Copy source code
 COPY . .
 
-# Build application
-RUN bun run build
+RUN npm run build
 
-# Production stage
-FROM oven/bun:1-slim
+
+FROM node:22-alpine
+
+RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lock ./
+COPY package*.json ./
+RUN npm install --only=production
 
-# Install production dependencies only
-RUN bun install --frozen-lockfile --production
-
-# Copy built application
 COPY --from=builder /app/dist ./dist
 
-# Expose port
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+RUN chown -R nodejs:nodejs /app
+
+USER nodejs
+
 EXPOSE 3001
 
-# Start application
-CMD ["bun", "run", "start:prod"]
+CMD ["node", "dist/src/main.js"]

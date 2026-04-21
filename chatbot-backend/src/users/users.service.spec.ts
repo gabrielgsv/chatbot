@@ -57,7 +57,7 @@ describe('UsersService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(null);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       (mockedBcrypt.hash as any).mockResolvedValue(hashedPassword);
       mockUserRepository.create.mockReturnValue(savedUser);
       mockUserRepository.save.mockResolvedValue(savedUser);
@@ -122,7 +122,7 @@ describe('UsersService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(user);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       (mockedBcrypt.compare as any).mockResolvedValue(true);
 
       const result = await service.login(email, password);
@@ -163,7 +163,7 @@ describe('UsersService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(user);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       (mockedBcrypt.compare as any).mockResolvedValue(false);
 
       await expect(service.login(email, password)).rejects.toThrow(
