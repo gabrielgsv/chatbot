@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { chatService, ChatMessage } from '@/lib/chat';
 import { telemetry } from '@/lib/telemetry';
+import { getTokenFromSW, clearTokenInSW } from '@/app/auth/lib/serviceWorker';
 import Image from 'next/image';
 
 export default function ChatPage() {
@@ -28,66 +29,66 @@ export default function ChatPage() {
 
   // Authentication check and connection
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('user');
+    const checkAuth = async () => {
+      const { token, user } = await getTokenFromSW();
 
-    if (!token) {
-      router.push('/auth');
-      return;
-    }
+      if (!token) {
+        router.push('/auth');
+        return;
+      }
 
-    // Redirect admin to dashboard
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      if (user.role === 'admin') {
+      // Redirect admin to dashboard
+      if (user && 'role' in user && user.role === 'admin') {
         router.push('/admin/dashboard');
         return;
       }
-    }
 
-    // Set up telemetry auth
-    telemetry.setAuthToken(token);
+      // Set up telemetry auth
+      telemetry.setAuthToken(token);
 
-    // Connect to WebSocket and update state via callback
-    chatService.connect(token);
-    // Use requestAnimationFrame to avoid cascading renders
-    requestAnimationFrame(() => {
-      setIsConnected(chatService.isConnected());
-    });
+      // Connect to WebSocket and update state via callback
+      chatService.connect(token);
+      // Use requestAnimationFrame to avoid cascading renders
+      requestAnimationFrame(() => {
+        setIsConnected(chatService.isConnected());
+      });
 
-    // Set up event listeners
-    const unsubscribeResponse = chatService.onResponse((response) => {
-      setIsLoading(false);
-      const assistantMessage: ChatMessage = {
-        id: response.messageId || Date.now().toString(),
-        role: 'assistant',
-        content: response.content,
-        timestamp: new Date().toISOString(),
-        metadata: response.metadata,
+      // Set up event listeners
+      const unsubscribeResponse = chatService.onResponse((response) => {
+        setIsLoading(false);
+        const assistantMessage: ChatMessage = {
+          id: response.messageId || Date.now().toString(),
+          role: 'assistant',
+          content: response.content,
+          timestamp: new Date().toISOString(),
+          metadata: response.metadata,
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+
+        // Track bot response
+        const source = response.metadata && 'source' in response.metadata
+          ? (response.metadata.source as 'ai' | 'mock')
+          : 'mock';
+        telemetry.trackBotResponse(response.content, source);
+      });
+
+      const unsubscribeError = chatService.onError((error) => {
+        console.error('Chat error:', error);
+        setIsLoading(false);
+      });
+
+      // Request chat history
+      chatService.requestHistory();
+
+      return () => {
+        unsubscribeResponse();
+        unsubscribeError();
+        chatService.disconnect();
+        telemetry.destroy();
       };
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Track bot response
-      const source = response.metadata && 'source' in response.metadata
-        ? (response.metadata.source as 'ai' | 'mock')
-        : 'mock';
-      telemetry.trackBotResponse(response.content, source);
-    });
-
-    const unsubscribeError = chatService.onError((error) => {
-      console.error('Chat error:', error);
-      setIsLoading(false);
-    });
-
-    // Request chat history
-    chatService.requestHistory();
-
-    return () => {
-      unsubscribeResponse();
-      unsubscribeError();
-      chatService.disconnect();
-      telemetry.destroy();
     };
+
+    checkAuth();
   }, [router]);
 
   // Auto-scroll to bottom
@@ -150,9 +151,9 @@ export default function ChatPage() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     telemetry.forceFlush();
-    localStorage.removeItem('auth_token');
+    await clearTokenInSW();
     chatService.disconnect();
     router.push('/auth');
   };

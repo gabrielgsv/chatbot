@@ -1,4 +1,5 @@
 import ky from 'ky';
+import { getTokenFromSW } from '@/app/auth/lib/serviceWorker';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -45,22 +46,21 @@ export interface FrequentQuestion {
 }
 
 class AdminTelemetryService {
-  private getAuthToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token');
-    }
-    return null;
+  private async getAuthToken(): Promise<string | null> {
+    if (typeof window === 'undefined') return null;
+    const { token } = await getTokenFromSW();
+    return token;
   }
 
-  private getHeaders(): Record<string, string> {
-    const token = this.getAuthToken();
+  private async getHeaders(): Promise<Record<string, string>> {
+    const token = await this.getAuthToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   async getStats(): Promise<TelemetryStats> {
     const response = await ky
       .get(`${API_URL}/telemetry/admin/stats`, {
-        headers: this.getHeaders(),
+        headers: await this.getHeaders(),
       })
       .json<{ statusCode: number; data: TelemetryStats }>();
     return response.data;
@@ -69,7 +69,7 @@ class AdminTelemetryService {
   async getTimeline(days = 30): Promise<TimelineData[]> {
     const response = await ky
       .get(`${API_URL}/telemetry/admin/timeline?days=${days}`, {
-        headers: this.getHeaders(),
+        headers: await this.getHeaders(),
       })
       .json<{ statusCode: number; data: TimelineData[] }>();
     return response.data;
@@ -78,7 +78,7 @@ class AdminTelemetryService {
   async getTopUsers(limit = 10): Promise<TopUser[]> {
     const response = await ky
       .get(`${API_URL}/telemetry/admin/top-users?limit=${limit}`, {
-        headers: this.getHeaders(),
+        headers: await this.getHeaders(),
       })
       .json<{ statusCode: number; data: TopUser[] }>();
     return response.data;
@@ -87,7 +87,7 @@ class AdminTelemetryService {
   async getRecentEvents(limit = 100): Promise<TelemetryEvent[]> {
     const response = await ky
       .get(`${API_URL}/telemetry/admin/recent-events?limit=${limit}`, {
-        headers: this.getHeaders(),
+        headers: await this.getHeaders(),
       })
       .json<{ statusCode: number; data: TelemetryEvent[] }>();
     return response.data;
@@ -96,7 +96,7 @@ class AdminTelemetryService {
   async getUserEvents(userId: string): Promise<TelemetryEvent[]> {
     const response = await ky
       .get(`${API_URL}/telemetry/admin/user-events/${userId}`, {
-        headers: this.getHeaders(),
+        headers: await this.getHeaders(),
       })
       .json<{ statusCode: number; data: TelemetryEvent[] }>();
     return response.data;
@@ -105,7 +105,7 @@ class AdminTelemetryService {
   async getFrequentQuestions(limit = 10): Promise<FrequentQuestion[]> {
     const response = await ky
       .get(`${API_URL}/telemetry/admin/frequent-questions?limit=${limit}`, {
-        headers: this.getHeaders(),
+        headers: await this.getHeaders(),
       })
       .json<{ statusCode: number; data: FrequentQuestion[] }>();
     return response.data;

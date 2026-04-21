@@ -37,7 +37,7 @@ services:
       DB_DATABASE: chatbot
       DB_SSL: "false"
       DB_SYNCHRONIZE: "true"
-      JWT_SECRET: 29w3unfoiuwne98nc9oq8une9c8nw498ufn9w8ebnf9283h4r982ubn498fnw4ht
+      JWT_SECRET: yoursecrethere
       NVIDIA_API_KEY: sk-mock
       ALLOWED_ORIGINS: http://localhost:3000
     depends_on:

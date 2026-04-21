@@ -81,8 +81,6 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
 
     if (isLogin && result.success && result.access_token) {
       await setTokenInSW(result.access_token, result.user);
-      localStorage.setItem('auth_token', result.access_token);
-      localStorage.setItem('user', JSON.stringify(result.user));
       // Redirect admin to dashboard, users to chat
       const redirectPath = result.user?.role === 'admin' ? '/admin/dashboard' : '/chat';
       router.push(redirectPath);
