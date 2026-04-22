@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -98,7 +99,7 @@ export default function ChatPage() {
     }
   }, [messages]);
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!inputValue.trim() || isLoading) return;
 
 
@@ -112,8 +113,8 @@ export default function ChatPage() {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Send via WebSocket
-    chatService.sendMessage(inputValue.trim());
+    // Send via Puter.js (async)
+    await chatService.sendMessage(inputValue.trim());
 
     // Clear input
     setInputValue('');
@@ -173,6 +174,17 @@ export default function ChatPage() {
   const getSourceBadge = (metadata?: Record<string, unknown>) => {
     if (!metadata || typeof metadata !== 'object') return null;
     const source = (metadata as { source?: string }).source;
+    const provider = (metadata as { provider?: string }).provider;
+    if (provider === 'puter') {
+      return (
+        <Badge
+          variant="default"
+          className="mt-2"
+        >
+          IA
+        </Badge>
+      );
+    }
     if (!source) return null;
     return (
       <Badge
@@ -241,7 +253,24 @@ export default function ChatPage() {
                     }`}
                 >
                   <CardContent className="gap-1 px-4 py-3">
-                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    {message.role === 'assistant' ? (
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p className="mb-1">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc ml-4 mb-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal ml-4 mb-1">{children}</ol>,
+                          li: ({ children }) => <li className="mb-1">{children}</li>,
+                          a: ({ href, children }) => <a href={href} className="text-blue-600 underline hover:text-blue-800">{children}</a>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          em: ({ children }) => <em className="italic">{children}</em>,
+                          code: ({ children }) => <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">{children}</code>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <p className="text-sm leading-relaxed">{message.content}</p>
+                    )}
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs opacity-70">
                         {formatTime(message.timestamp)}

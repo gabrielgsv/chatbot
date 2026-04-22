@@ -245,4 +245,42 @@ export class TelemetryController {
       data: questions,
     };
   }
+
+  @UseGuards(AdminGuard)
+  @Get('admin/locations')
+  @ApiOperation({ summary: 'Get location statistics (Admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Location statistics retrieved successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
+  async getLocationStats() {
+    const locations = await this.telemetryService.getLocationStats();
+    return {
+      statusCode: HttpStatus.OK,
+      data: locations,
+    };
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('admin/languages')
+  @ApiOperation({ summary: 'Get language statistics (Admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Language statistics retrieved successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
+  async getLanguageStats() {
+    const languages = await this.telemetryService.getLanguageStats();
+    return {
+      statusCode: HttpStatus.OK,
+      data: languages,
+    };
+  }
 }

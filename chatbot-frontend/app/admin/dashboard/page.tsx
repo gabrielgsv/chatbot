@@ -10,12 +10,14 @@ import {
   BarChart3,
   LogOut,
   Search,
+  Globe,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-import { adminTelemetry, TelemetryStats, TopUser, TelemetryEvent, FrequentQuestion } from '@/lib/admin-telemetry';
+import { adminTelemetry, TelemetryStats, TopUser, TelemetryEvent, FrequentQuestion, LocationStats, LanguageStats } from '@/lib/admin-telemetry';
 import { getTokenFromSW, clearTokenInSW } from '@/app/auth/lib/serviceWorker';
 
 interface UserData {
@@ -33,6 +35,8 @@ export default function AdminDashboardPage() {
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [recentEvents, setRecentEvents] = useState<TelemetryEvent[]>([]);
   const [frequentQuestions, setFrequentQuestions] = useState<FrequentQuestion[]>([]);
+  const [locationStats, setLocationStats] = useState<LocationStats[]>([]);
+  const [languageStats, setLanguageStats] = useState<LanguageStats[]>([]);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [userEvents, setUserEvents] = useState<TelemetryEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -64,17 +68,21 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       setError(null);
 
-      const [statsData, topUsersData, recentEventsData, frequentQuestionsData] = await Promise.all([
+      const [statsData, topUsersData, recentEventsData, frequentQuestionsData, locationStatsData, languageStatsData] = await Promise.all([
         adminTelemetry.getStats(),
         adminTelemetry.getTopUsers(10),
         adminTelemetry.getRecentEvents(50),
         adminTelemetry.getFrequentQuestions(10),
+        adminTelemetry.getLocationStats(),
+        adminTelemetry.getLanguageStats(),
       ]);
 
       setStats(statsData);
       setTopUsers(topUsersData);
       setRecentEvents(recentEventsData);
       setFrequentQuestions(frequentQuestionsData);
+      setLocationStats(locationStatsData);
+      setLanguageStats(languageStatsData);
     } catch (err) {
       setError('Erro ao carregar dados do dashboard');
       console.error(err);
@@ -341,6 +349,87 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   Nenhuma pergunta registrada ainda
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Locations and Languages */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Localizações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {locationStats.length > 0 ? (
+                <div className="space-y-3">
+                  {locationStats.slice(0, 10).map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-orange-100 text-orange-800">
+                          {item.timezone}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-32 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-orange-600 h-2 rounded-full"
+                            style={{ width: `${Math.max((item.count / (locationStats[0]?.count || 1)) * 100, 5)}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 min-w-[3rem] text-right">
+                          {item.count.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  Nenhuma localização registrada ainda
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Idiomas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {languageStats.length > 0 ? (
+                <div className="space-y-3">
+                  {languageStats.slice(0, 10).map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-purple-100 text-purple-800">
+                          {item.language}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-32 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-purple-600 h-2 rounded-full"
+                            style={{ width: `${Math.max((item.count / (languageStats[0]?.count || 1)) * 100, 5)}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 min-w-[3rem] text-right">
+                          {item.count.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  Nenhum idioma registrado ainda
                 </div>
               )}
             </CardContent>
