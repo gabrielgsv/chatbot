@@ -9,7 +9,15 @@ Chatbot com telemetria avançada e WebSocket + IA para o desafio técnico da Han
 
 ## Como Rodar
 
-### 1. Inicie os containers
+#### Adicionar sua secret
+
+Modifique a linha JWT_SECRET no ./docker-compose.yml , adicione sua secret de autenticação no lugar de "yoursecrethere":
+
+```js
+JWT_SECRET: yoursecrethere;
+```
+
+### Inicie os containers
 
 ```bash
 docker-compose up -d
