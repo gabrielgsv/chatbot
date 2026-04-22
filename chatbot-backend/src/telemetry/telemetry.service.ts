@@ -33,6 +33,16 @@ interface QuestionRow {
   count: string;
 }
 
+interface LocationStatsRow {
+  timezone: string;
+  count: string;
+}
+
+interface LanguageStatsRow {
+  language: string;
+  count: string;
+}
+
 @Injectable()
 export class TelemetryService {
   private readonly logger = new Logger(TelemetryService.name);
@@ -291,6 +301,40 @@ export class TelemetryService {
 
     return result.map((row) => ({
       question: row.question,
+      count: parseInt(row.count, 10),
+    }));
+  }
+
+  async getLocationStats(): Promise<{ timezone: string; count: number }[]> {
+    const result = await this.telemetryRepository
+      .createQueryBuilder('event')
+      .select('event.metadata->>\'timezone\'', 'timezone')
+      .addSelect('COUNT(*)', 'count')
+      .where('event.eventType = :eventType', { eventType: 'user_location' })
+      .andWhere('event.metadata->>\'timezone\' IS NOT NULL')
+      .groupBy('event.metadata->>\'timezone\'')
+      .orderBy('"count"', 'DESC')
+      .getRawMany<LocationStatsRow>();
+
+    return result.map((row) => ({
+      timezone: row.timezone,
+      count: parseInt(row.count, 10),
+    }));
+  }
+
+  async getLanguageStats(): Promise<{ language: string; count: number }[]> {
+    const result = await this.telemetryRepository
+      .createQueryBuilder('event')
+      .select('event.metadata->>\'browserLanguage\'', 'language')
+      .addSelect('COUNT(*)', 'count')
+      .where('event.eventType = :eventType', { eventType: 'language' })
+      .andWhere('event.metadata->>\'browserLanguage\' IS NOT NULL')
+      .groupBy('event.metadata->>\'browserLanguage\'')
+      .orderBy('"count"', 'DESC')
+      .getRawMany<LanguageStatsRow>();
+
+    return result.map((row) => ({
+      language: row.language,
       count: parseInt(row.count, 10),
     }));
   }
