@@ -141,6 +141,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('chat:save')
+  async handleSaveMessage(
+    @MessageBody() data: { role: string; content: string },
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    if (!client.userId) {
+      return;
+    }
+
+    try {
+      await this.chatService.saveMessage(
+        client.userId,
+        data.role as any,
+        data.content,
+        client.sessionId,
+      );
+    } catch (error) {
+      this.logger.error('Error saving message:', error);
+    }
+  }
+
   private generateSessionId(): string {
     return `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
