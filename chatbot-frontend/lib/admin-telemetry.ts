@@ -12,6 +12,16 @@ export interface TelemetryStats {
   activeUsersThisMonth: number;
 }
 
+export interface LocationStats {
+  timezone: string;
+  count: number;
+}
+
+export interface LanguageStats {
+  language: string;
+  count: number;
+}
+
 export interface TimelineData {
   date: string;
   count: number;
@@ -108,6 +118,24 @@ class AdminTelemetryService {
         headers: await this.getHeaders(),
       })
       .json<{ statusCode: number; data: FrequentQuestion[] }>();
+    return response.data;
+  }
+
+  async getLocationStats(): Promise<LocationStats[]> {
+    const response = await ky
+      .get(`${API_URL}/telemetry/admin/locations`, {
+        headers: await this.getHeaders(),
+      })
+      .json<{ statusCode: number; data: LocationStats[] }>();
+    return response.data;
+  }
+
+  async getLanguageStats(): Promise<LanguageStats[]> {
+    const response = await ky
+      .get(`${API_URL}/telemetry/admin/languages`, {
+        headers: await this.getHeaders(),
+      })
+      .json<{ statusCode: number; data: LanguageStats[] }>();
     return response.data;
   }
 }
