@@ -126,12 +126,16 @@ export async function authenticate(
     }
 
     if (isLogin && data.access_token) {
+      const { setAuthCookie, setAuthUserCookie } = await import('./lib/cookie');
+      await setAuthCookie(data.access_token);
+      if (data.user) {
+        await setAuthUserCookie(data.user);
+      }
       return {
         errors: {},
         message: "",
         success: true,
         redirect: "/",
-        access_token: data.access_token,
         user: data.user,
       };
     }

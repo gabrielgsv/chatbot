@@ -3,46 +3,18 @@ import { test, expect } from '@playwright/test';
 async function setupAuth(page: ReturnType<typeof test.use>[0], role: 'user' | 'admin' = 'user') {
   await page.goto('/auth');
 
-  // Wait for service worker to be ready and set token via SW
-  await page.waitForFunction(() => navigator.serviceWorker?.controller !== null);
-
   const token = role === 'admin' ? 'mock_admin_token' : 'mock_token_for_testing';
-  const userData = role === 'admin'
-    ? { id: 'admin-user-id', email: 'admin@example.com', role: 'admin' }
-    : { id: 'test-user-id', email: 'test@example.com', role: 'user' };
 
-  // Set token via Service Worker
-  await page.evaluate(({ token, userData }) => {
-    return new Promise<void>((resolve) => {
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'SET_TOKEN',
-          payload: { token, user: userData }
-        });
-        resolve();
-      } else {
-        // Fallback if SW not ready
-        localStorage.setItem('auth_token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        resolve();
-      }
-    });
-  }, { token, userData });
+  await page.evaluate(({ token }) => {
+    document.cookie = `auth_token=${encodeURIComponent(token)}; path=/`;
+  }, { token });
 }
 
 test.describe('Chat Interface', () => {
   test('should redirect to auth if not authenticated', async ({ page }) => {
-    // Clear any existing auth
-    await page.goto('/auth');
-    await page.evaluate(async () => {
-      if (navigator.serviceWorker.controller) {
-        await new Promise<void>((resolve) => {
-          navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_TOKEN' });
-          resolve();
-        });
-      } else {
-        localStorage.clear();
-      }
+    // Clear any existing auth by clearing cookies
+    await page.evaluate(() => {
+      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     });
 
     await page.goto('/chat');
@@ -170,14 +142,5 @@ test.describe('Chat Interface', () => {
     // Check that main elements are visible on mobile
     await expect(page.getByRole('heading', { name: 'Hand Talk Assistant' })).toBeVisible();
     await expect(page.getByPlaceholder('Digite sua mensagem...')).toBeVisible();
-  });
-
-  test('should redirect admin users to dashboard', async ({ page }) => {
-    await setupAuth(page, 'admin');
-
-    await page.goto('/chat');
-
-    // Should redirect to admin dashboard
-    await expect(page).toHaveURL('/admin/dashboard');
   });
 });

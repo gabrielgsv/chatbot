@@ -149,7 +149,7 @@ export class ChatService {
           ...historyForAI,
           { role: "user", content },
         ],
-        { model: "inclusionai/ling-2.6-flash:free" },
+        { model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free" },
       );
 
       const messageContent = result.message?.content;
@@ -168,7 +168,8 @@ export class ChatService {
             break;
           }
         }
-        responseContent = foundText || "Desculpe, não consegui processar sua mensagem.";
+        responseContent =
+          foundText || "Desculpe, não consegui processar sua mensagem.";
       } else {
         responseContent = "Desculpe, não consegui processar sua mensagem.";
       }
@@ -176,7 +177,10 @@ export class ChatService {
       this.chatHistory.push({ role: "user", content });
       this.chatHistory.push({ role: "assistant", content: responseContent });
 
-      this.socket.emit("chat:save", { role: "assistant", content: responseContent });
+      this.socket.emit("chat:save", {
+        role: "assistant",
+        content: responseContent,
+      });
 
       const responseTimeMs = Date.now() - startTime;
       telemetry.trackBotResponse(responseContent, "ai", responseTimeMs);
@@ -189,7 +193,8 @@ export class ChatService {
       );
     } catch (error) {
       console.error("Puter.js API error:", error);
-      const errorMessage = "Desculpe, ocorreu um erro ao processar sua mensagem.";
+      const errorMessage =
+        "Desculpe, ocorreu um erro ao processar sua mensagem.";
       telemetry.trackBotResponse(errorMessage, "mock", Date.now() - startTime);
       this.responseListeners.forEach((listener) =>
         listener({
