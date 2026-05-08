@@ -18,7 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { adminTelemetry, TelemetryStats, TopUser, TelemetryEvent, FrequentQuestion, LocationStats, LanguageStats } from '@/lib/admin-telemetry';
-import { getTokenFromSW, clearTokenInSW } from '@/app/auth/lib/serviceWorker';
+import { getAuthUserFromCookie, getAuthTokenFromCookie } from '@/app/auth/lib/cookie-client';
+import { clearAuth } from '@/app/auth/lib/user-actions';
 
 interface UserData {
   id: string;
@@ -42,21 +43,27 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { token, user } = await getTokenFromSW();
+    const checkAuth = () => {
+      console.log('All cookies:', document.cookie);
+      const user = getAuthUserFromCookie();
+      const token = getAuthTokenFromCookie();
+      console.log('User from cookie:', user);
+      console.log('Token from cookie:', token ? 'present' : 'missing');
 
       if (!token || !user) {
+        console.log('No token or user, redirecting to /auth');
         router.push('/auth');
         return;
       }
 
-      const userData: UserData = user as UserData;
-      if (userData.role !== 'admin') {
+      if (user.role !== 'admin') {
+        console.log('User is not admin, redirecting to /chat');
         router.push('/chat');
         return;
       }
 
-      setUser(userData);
+      console.log('Admin authenticated, loading dashboard');
+      setUser(user);
       loadDashboardData();
     };
 
@@ -67,6 +74,7 @@ export default function AdminDashboardPage() {
     try {
       setIsLoading(true);
       setError(null);
+      console.log('Loading dashboard data...');
 
       const [statsData, topUsersData, recentEventsData, frequentQuestionsData, locationStatsData, languageStatsData] = await Promise.all([
         adminTelemetry.getStats(),
@@ -77,6 +85,7 @@ export default function AdminDashboardPage() {
         adminTelemetry.getLanguageStats(),
       ]);
 
+      console.log('Dashboard data loaded:', { statsData, topUsersData });
       setStats(statsData);
       setTopUsers(topUsersData);
       setRecentEvents(recentEventsData);
@@ -84,15 +93,15 @@ export default function AdminDashboardPage() {
       setLocationStats(locationStatsData);
       setLanguageStats(languageStatsData);
     } catch (err) {
+      console.error('Error loading dashboard data:', err);
       setError('Erro ao carregar dados do dashboard');
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = async () => {
-    await clearTokenInSW();
+    await clearAuth();
     router.push('/auth');
   };
 

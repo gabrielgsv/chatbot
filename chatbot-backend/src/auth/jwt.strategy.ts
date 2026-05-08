@@ -12,17 +12,19 @@ interface JwtPayload {
   role: string;
 }
 
-interface JwtStrategyOptions {
-  jwtFromRequest: any;
-  ignoreExpiration: boolean;
-  secretOrKey: string;
-}
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
-    const options: JwtStrategyOptions = {
-      jwtFromRequest: (ExtractJwt as any).fromAuthHeaderAsBearerToken(),
+    const options = {
+      jwtFromRequest: (req: any) => {
+        const authHeader = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+        if (authHeader) return authHeader;
+
+        const cookieToken = req?.cookies?.auth_token;
+        if (cookieToken) return cookieToken;
+
+        return null;
+      },
       ignoreExpiration: false,
       secretOrKey: jwtConstants.secret,
     };
