@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { chatService, ChatMessage } from '@/lib/chat';
 import { telemetry } from '@/lib/telemetry';
-import { getTokenFromSW, clearTokenInSW } from '@/app/auth/lib/serviceWorker';
+import { getAuthTokenFromCookie, deleteAuthCookie } from '@/app/auth/lib/cookie-client';
 import Image from 'next/image';
 
 export default function ChatPage() {
@@ -31,25 +31,15 @@ export default function ChatPage() {
   // Authentication check and connection
   useEffect(() => {
     const checkAuth = async () => {
-      const { token, user } = await getTokenFromSW();
+      const token = getAuthTokenFromCookie();
 
       if (!token) {
         router.push('/auth');
         return;
       }
 
-      // Redirect admin to dashboard
-      if (user && 'role' in user && user.role === 'admin') {
-        router.push('/admin/dashboard');
-        return;
-      }
-
-      // Set up telemetry auth
       telemetry.setAuthToken(token);
-
-      // Connect to WebSocket and update state via callback
       chatService.connect(token);
-      // Use requestAnimationFrame to avoid cascading renders
       requestAnimationFrame(() => {
         setIsConnected(chatService.isConnected());
       });
@@ -154,7 +144,7 @@ export default function ChatPage() {
 
   const handleLogout = async () => {
     telemetry.forceFlush();
-    await clearTokenInSW();
+    deleteAuthCookie();
     chatService.disconnect();
     router.push('/auth');
   };

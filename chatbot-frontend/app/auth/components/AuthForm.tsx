@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { authenticate } from '../actions';
-import {
-  registerServiceWorker,
-  setTokenInSW,
-  isSWReady,
-} from '../lib/serviceWorker';
 
 interface ValidationErrors {
   email?: string;
@@ -39,14 +34,6 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
     name: '',
     phone: '',
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [swReady, setSwReady] = useState(false);
-
-  useEffect(() => {
-    registerServiceWorker().then(() => {
-      setSwReady(isSWReady());
-    });
-  }, []);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -79,9 +66,7 @@ export function AuthForm({ initialMode = 'login' }: AuthFormProps) {
       setIsSuccess(result.success);
     }
 
-    if (isLogin && result.success && result.access_token) {
-      await setTokenInSW(result.access_token, result.user);
-      // Redirect admin to dashboard, users to chat
+    if (isLogin && result.success) {
       const redirectPath = result.user?.role === 'admin' ? '/admin/dashboard' : '/chat';
       router.push(redirectPath);
       return;
